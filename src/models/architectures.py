@@ -839,6 +839,7 @@ class CNN_simple(torch.nn.Module):
         self.fc = torch.nn.Linear(1024, config.model.num_classes)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
+        self.to(self.device)
 
     def calculate_final_layer_details(self, conv_layers):
         image_size = self.image_size
@@ -907,7 +908,7 @@ class CNN_simple(torch.nn.Module):
                 # if batch_idx % self.config.hyper.log_interval == 0:
                 #     print(f'Train Epoch: {epoch+1} [{batch_idx * len(data)}/{len(train_loader.dataset)}'
                 #         f' ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
-                #     # print(f'Validation loss: {val_loss.item()}')
+                    # print(f'Validation loss: {val_loss.item()}')
                 
             #validation loss
             val_loss = 0.0
