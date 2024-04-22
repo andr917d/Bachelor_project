@@ -7,7 +7,7 @@ import os
 # This is a good practice to avoid exposing your API key
 # You can also set this in your bashrc or zshrc file
 # with open("secret.txt", "r") as f:
-with open("../secret.txt", "r") as f:
+with open("secret.txt", "r") as f:
     os.environ['WANDB_API_KEY'] = f.read().strip()
 
 # 
