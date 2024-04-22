@@ -1,12 +1,12 @@
 hyper:
   lr: 0.001
-  epochs: 1
+  epochs: 15
   batch_size: 64
   step_size: 10
   gamma: 0.1
   log_interval: 10
 model:
-  name: "CNN_simple"
+  name: "BatchEnsemble_CNN"
   image_size: 32
   num_classes: 10
   # conv_layers: [(3, 64, 3, 1, 1, 0.2, True), (64, 128, 3, 1, 1, 0.2, True), (128, 256, 3, 1, 1, 0.2, True), 
