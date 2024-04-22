@@ -1439,10 +1439,6 @@ class BatchEnsemble_CNN(torch.nn.Module):
     
 
 
-
-
-
-
 class Conv2d_Rank1(torch.nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, ensemble_size, stride=1, padding=1, prior_mu=0, prior_sigma=1, bias=True):
         super(Conv2d_Rank1, self).__init__()
@@ -1584,16 +1580,19 @@ class ConvBlock_rank1(torch.nn.Module):
     
 
 class Simple_rank1_CNN(torch.nn.Module):
-    def __init__(self, conv_layers, num_classes=10, image_size=28):
+    def __init__(self, config):
         super(Simple_rank1_CNN, self).__init__()
-        self.image_size = image_size
-        self.conv_blocks = torch.nn.ModuleList([ConvBlock_rank1(*layer) for layer in conv_layers])
-        self.ensemble_size = conv_layers[0][3]
-        final_out_channels, final_image_size = self.calculate_final_layer_details(conv_layers)
+        self.image_size = config.model.image_size
+        self.conv_layers = config.model.conv_layers
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.conv_blocks = torch.nn.ModuleList([ConvBlock_rank1(*layer) for layer in self.conv_layers])
+        self.ensemble_size = self.conv_layers[0][3]
+        final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
         self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 1024)
-        self.fc = torch.nn.Linear(1024, num_classes)
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
+        self.fc = torch.nn.Linear(1024, config.model.num_classes)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
+        self.to(self.device)
 
     def forward(self, x):
         batch_size = x.size(0)
@@ -1643,33 +1642,69 @@ class Simple_rank1_CNN(torch.nn.Module):
         loss = sum(losses)
         return loss
    
-    def train(self, train_loader, num_epochs, log_interval=30):
-        losses, neg_log_likelihoods, kl_divergences = [], [], []
+    def train(self, train_loader, test_loader):
+        # losses, neg_log_likelihoods, kl_divergences = [], [], []
 
-        for epoch in range(num_epochs):
+        for epoch in range(self.config.hyper.epochs):
+            
+            train_loss = 0.0
+            log_likelihood = 0.0
+            kl_u = 0.0
+            kl_v = 0.0
+            log_p_w = 0.0
+
             for batch_idx, (data, target) in enumerate(train_loader):
+                data, target = data.to(self.device), target.to(self.device)
+
                 self.optimizer.zero_grad()
                 self.sample()
                 output = self(data) 
                 neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)
-                kl_divergence_u = self.kl_divergence_u()
-                kl_divergence_v = self.kl_divergence_v()
-                log_prob_w = self.log_prob_w()
+                kl_divergence_u = self.kl_divergence_u()*len(data)/len(train_loader.dataset)
+                kl_divergence_v = self.kl_divergence_v()*len(data)/len(train_loader.dataset)
+                log_prob_w = self.log_prob_w()*len(data)/len(train_loader.dataset)
 
                 loss = neg_log_likelihood + kl_divergence_u + kl_divergence_v - log_prob_w
                 loss.backward()
                 self.optimizer.step()
+
+                train_loss += loss.item()
+                log_likelihood += neg_log_likelihood.item()
+                kl_u += kl_divergence_u.item()
+                kl_v += kl_divergence_v.item()
+                log_p_w += log_prob_w.item()
+        
+            val_loss = 0.0
+            accuracy = 0.0
+            for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                val_output = self(val_data)
+
+                val_negative_log_likelihood = self.neg_log_likelihood_categorical(val_output, val_target)
+                val_kl_divergence_u = self.kl_divergence_u()*len(val_data)/len(test_loader.dataset)
+                val_kl_divergence_v = self.kl_divergence_v()*len(val_data)/len(test_loader.dataset)
+                val_log_prob_w = self.log_prob_w()*len(val_data)/len(test_loader.dataset)
+
+                loss = val_negative_log_likelihood + val_kl_divergence_u + val_kl_divergence_v - val_log_prob_w
+                val_loss += loss.item()
+
+             
+                #accuracy
+                _, predicted = torch.max(val_output, -1)
+                correct = (predicted == val_target).sum().item()
+                accuracy += correct / len(val_target)
+
+            accuracy = accuracy / len(test_loader)
+
+            #logging
+            print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss} \tValidation Accuracy: {accuracy}')
+            wandb.log({"training_loss": train_loss, "kl_divergence_u": kl_u, "kl_divergence_v": kl_v, "log_prob_w": log_p_w, "val_loss": val_loss, "val_accuracy": accuracy})
                 
-                if batch_idx % log_interval == 0:
-                    print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)}'
-                        f' ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
-                losses.append(loss.item())
-                neg_log_likelihoods.append(neg_log_likelihood.item())
-                kl_divergences.append(kl_divergence_u.item() + kl_divergence_v.item())
+    
                     
             self.scheduler.step()  
         
-        return losses, neg_log_likelihoods, kl_divergences
+ 
     
     def save_model(self, directory='models', filename='Simple_rank1_CNN.pt'):
         directory = os.path.join(os.getcwd(), directory)
