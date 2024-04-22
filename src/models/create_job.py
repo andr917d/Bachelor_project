@@ -6,7 +6,8 @@ import os
 # Set environment variable by reading from secret file
 # This is a good practice to avoid exposing your API key
 # You can also set this in your bashrc or zshrc file
-with open("secret.txt", "r") as f:
+# with open("secret.txt", "r") as f:
+with open("../secret.txt", "r") as f:
     os.environ['WANDB_API_KEY'] = f.read().strip()
 
 # 
@@ -26,7 +27,7 @@ def main(config):
                 -o lsf_logs/gpu_%J.out
                 -e lsf_logs/gpu_%J.err
                 -env "all" 
-                python3 train.py
+                python3 train_model.py
                 hyper.lr={config.hyper.lr} 
                 hyper.epochs={config.hyper.epochs}
                 hyper.batch_size={config.hyper.batch_size}
