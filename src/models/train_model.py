@@ -1,4 +1,4 @@
-import wandb
+# import wandb
 import hydra
 from omegaconf import OmegaConf
 import numpy as np
@@ -77,15 +77,15 @@ def main(config):
     print(f"configuration: \n {OmegaConf.to_yaml(config)}")
     
     # Initiate wandb logger
-    try:
-        # project is the name of the project in wandb, entity is the username
-        # You can also add tags, group etc.
-        run = wandb.init(project=config.wandb.project, 
-                   config=OmegaConf.to_container(config), 
-                   entity=config.wandb.entity)
-        print(f"wandb initiated with run id: {run.id} and run name: {run.name}")
-    except Exception as e:
-        print(f"\nCould not initiate wandb logger\nError: {e}")
+    # try:
+    #     # project is the name of the project in wandb, entity is the username
+    #     # You can also add tags, group etc.
+    #     run = wandb.init(project=config.wandb.project, 
+    #                config=OmegaConf.to_container(config), 
+    #                entity=config.wandb.entity)
+    #     print(f"wandb initiated with run id: {run.id} and run name: {run.name}")
+    # except Exception as e:
+    #     print(f"\nCould not initiate wandb logger\nError: {e}")
 
     # Usual PyTorch training code using a Trainer class
     dataset_name = config.data.dataset_name
@@ -102,7 +102,7 @@ def main(config):
     model = init_model(config.model.name, config)
     torch.manual_seed(config.constants.seed)
 
-    model.train(train_loader)
+    model.train(train_loader, test_loader)
 
     
     

@@ -1335,16 +1335,21 @@ class ConvBlock(torch.nn.Module):
 
 # CNN with BatchEnsemble
 class BatchEnsemble_CNN(torch.nn.Module):
-    def __init__(self, conv_layers, num_classes=10, image_size=28):
+    def __init__(self, config):
         super(BatchEnsemble_CNN, self).__init__()
-        self.image_size = image_size
-        self.conv_blocks = torch.nn.ModuleList([ConvBlock(*layer) for layer in conv_layers])
-        self.ensemble_size = conv_layers[0][3]
-        final_out_channels, final_image_size = self.calculate_final_layer_details(conv_layers)
+
+        self.image_size = config.model.image_size
+        self.conv_layers = config.model.conv_layers
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"    
+
+        self.conv_blocks = torch.nn.ModuleList([ConvBlock(*layer) for layer in self.conv_layers])
+        self.ensemble_size = self.conv_layers[0][3]
+        final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
         self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 1024)
-        self.fc = torch.nn.Linear(1024, num_classes)
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
+        self.fc = torch.nn.Linear(1024, config.model.num_classes)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
+        self.to(self.device)
 
 
 
@@ -1375,42 +1380,46 @@ class BatchEnsemble_CNN(torch.nn.Module):
 
         return loss
     
-    def train(self, train_loader, test_loader, num_epochs, log_interval=5):
-        losses = []
-        val_losses = []
+    def train(self, train_loader, test_loader):
 
-        for epoch in range(num_epochs):
+        for epoch in range(self.config.hyper.epochs):
+            train_loss = 0.0
             for batch_idx, (data, target) in enumerate(train_loader):
-                
-
+                data, target = data.to(self.device), target.to(self.device)
                 self.optimizer.zero_grad()
                 output = self(data) 
                 loss = self.neg_log_likelihood_categorical(output, target)/len(data)
                 loss.backward()
                 self.optimizer.step()
-                
-                
 
-                #validate on the whole test set
-                
-                with torch.no_grad():
-                    for val_data, val_target in test_loader:
-                        val_output = self(val_data)
-                        val_loss = self.neg_log_likelihood_categorical(val_output, val_target)/len(val_data)
-                        val_losses.append(val_loss.item())
+                train_loss += loss.item()
+            
+            val_accuracy = 0.0
+            val_loss = 0.0
+            for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                val_output = self(val_data)
+                loss = self.neg_log_likelihood_categorical(val_output, val_target)/len(val_data)
+                val_loss += loss.item()
 
-                if batch_idx % log_interval == 0:
-                    print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)}'
-                        f' ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f} ')# #\tVal Loss: {val_loss.item():.6f}')
-                losses.append(loss.item())
-                        
-            self.scheduler.step()
+                #accuracy
+                _, predicted = torch.max(val_output, -1)
+                correct = (predicted == val_target).sum().item()
+                val_accuracy += correct / len(val_target)
+
+
+            val_accuracy = val_accuracy / len(test_loader)
+
 
             
-    
-              
+            #logging
+            print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss} \tValidation Accuracy: {val_accuracy}')
+            wandb.log({"training_loss": train_loss, "val_loss": val_loss, "val_accuracy": val_accuracy})
+
         
-        return losses, val_losses
+            self.scheduler.step()
+
+        print('Finished Training')
     
     def save_model(self, directory='models', filename='BatchEnsemble_CNN.pt'):
         directory = os.path.join(os.getcwd(), directory)
