@@ -1121,16 +1121,21 @@ class ConvBlock_simpleBNN(torch.nn.Module):
     
 # CNN with Bayesian convolutional layers
 class ConvolutionalBNN(torch.nn.Module):
-    def __init__(self, conv_layers, num_classes=10, image_size=28):
+    def __init__(self, config):
         super(ConvolutionalBNN, self).__init__()
-        self.image_size = image_size
-        self.conv_blocks = torch.nn.ModuleList([ConvBlock_simpleBNN(*layer) for layer in conv_layers])
-        final_out_channels, final_image_size = self.calculate_final_layer_details(conv_layers)
+        self.config = config
+        self.image_size = config.model.image_size
+        self.conv_layers = config.model.conv_layers
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        self.conv_blocks = torch.nn.ModuleList([ConvBlock_simpleBNN(*layer) for layer in self.conv_layers])
+        final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
         # final_out_channels, final_image_size = 64, 3
         self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 1024)
-        self.fc = torch.nn.Linear(1024, num_classes)
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=2, gamma=0.1)
+        self.fc = torch.nn.Linear(1024, config.model.num_classes)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
+        self.to(self.device)
         
 
 
@@ -1180,65 +1185,87 @@ class ConvolutionalBNN(torch.nn.Module):
     def neg_log_likelihood_categorical(self, y_pred, y_true):
         return torch.nn.functional.cross_entropy(y_pred, y_true, reduction='sum')
     
-    def train(self, train_loader, num_epochs, log_interval=30):
-        losses, neg_log_likelihoods, kl_divergences = [], [], []
-
-        val_losses = []
-
+    def train(self, train_loader, test_loader):
 
         #split the data into training and validation
-        train_size = int(0.95 * len(train_loader.dataset))
+        # train_size = int(0.95 * len(train_loader.dataset))
 
-        train_dataset, val_dataset = torch.utils.data.random_split(train_loader.dataset, [train_size, len(train_loader.dataset) - train_size])
+        # train_dataset, val_dataset = torch.utils.data.random_split(train_loader.dataset, [train_size, len(train_loader.dataset) - train_size])
 
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=train_loader.batch_size, shuffle=True)
-        #test on the whole validation set
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=len(val_dataset), shuffle=False)
-
-        n_train = len(train_loader.dataset)
+        # train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=train_loader.batch_size, shuffle=True)
+        # #test on the whole validation set
+        # val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=len(val_dataset), shuffle=False)
 
 
-        for epoch in range(num_epochs):
+
+        for epoch in range(self.config.hyper.epochs):
+            
+            train_loss = 0.0
+            log_likelihood = 0.0
+            logp_values = 0.0
+            logq_values = 0.0
+
+
+
             for batch_idx, (data, target) in enumerate(train_loader):
+                data, target = data.to(self.device), target.to(self.device)
                 self.optimizer.zero_grad()
                 self.sample()
                 output = self(data) 
-                neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)*n_train/len(data)
+                neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)
                 
-                logp = self.logp()
-                logq = self.logq()
+                logp = self.logp()*len(data)/len(train_loader.dataset)
+                logq = self.logq()*len(data)/len(train_loader.dataset)
                 
 
                 loss = neg_log_likelihood + logq - logp
 
-                #validation loss
-                val_loss = 0
-
-                with torch.no_grad():
-                    val_data, val_target = next(iter(val_loader))
-                    val_output = self(val_data)
-                    val_loss = self.neg_log_likelihood_categorical(val_output, val_target)*n_train/len(val_data)+logp-logq
-
-
                 loss.backward()
                 self.optimizer.step()
 
-                val_losses.append(val_loss.item())
+                train_loss += loss.item()
+                log_likelihood += neg_log_likelihood.item()
+                logp_values += logp.item()
+                logq_values += logq.item()
+
+
+            #validation loss
+            val_loss = 0.0
+            accuracy = 0.0
+
+            with torch.no_grad():
+                for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                    val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                    val_output = self(val_data)
+                    
+                    neg_log_likelihood = self.neg_log_likelihood_categorical(val_output, val_target)
+                    logp = self.logp()*len(val_data)/len(test_loader.dataset)
+                    logq = self.logq()*len(val_data)/len(test_loader.dataset)
+                    val_loss = neg_log_likelihood + logq - logp
+
+
+
+                    #calculate accuracy
+                    _, predicted = torch.max(val_output, -1)
+                    correct = (predicted == val_target).sum().item()
+                    accuracy_batch = correct / len(val_target)
+                    # print(f'Validation accuracy: {accuracy_batch}')
+                    accuracy += accuracy_batch
+
+            accuracy = accuracy / len(test_loader)
+
+            #logging
+            print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss}\tLog Likelihood: {log_likelihood}\tLogp: {logp_values}\tLogq: {logq_values}\tAccuracy: {accuracy}')
+            wandb.log({"training_loss": train_loss, "val_loss": val_loss, "log_likelihood": log_likelihood, "logp": logp_values, "logq": logq_values, "val_accuracy": accuracy})
+
+
                 
-                if batch_idx % log_interval == 0:
-                    print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)}'
-                        f' ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
-                    print(f'logp: {self.logp().item():.6f}, logq: {self.logq().item():.6f}')
 
-                losses.append(loss.item())
-                neg_log_likelihoods.append(neg_log_likelihood.item())
-                kl_divergences.append(logq.item() - logp.item())
-
+             
             # scheduler step
             self.scheduler.step()
         
-        #return losses, neg_log_likelihoods, kl_divergences
-        return losses,  val_losses, neg_log_likelihoods, kl_divergences
+        print('Finished Training')
     
     def save_model(self, directory='models', filename='CNN_BNN.pt'):
         directory = os.path.join(os.getcwd(), directory)
@@ -1337,7 +1364,7 @@ class ConvBlock(torch.nn.Module):
 class BatchEnsemble_CNN(torch.nn.Module):
     def __init__(self, config):
         super(BatchEnsemble_CNN, self).__init__()
-
+        self.config = config
         self.image_size = config.model.image_size
         self.conv_layers = config.model.conv_layers
         self.device = "cuda" if torch.cuda.is_available() else "cpu"    
@@ -1396,16 +1423,17 @@ class BatchEnsemble_CNN(torch.nn.Module):
             
             val_accuracy = 0.0
             val_loss = 0.0
-            for batch_idx, (val_data, val_target) in enumerate(test_loader):
-                val_data, val_target = val_data.to(self.device), val_target.to(self.device)
-                val_output = self(val_data)
-                loss = self.neg_log_likelihood_categorical(val_output, val_target)/len(val_data)
-                val_loss += loss.item()
+            with torch.no_grad():
+                for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                    val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                    val_output = self(val_data)
+                    loss = self.neg_log_likelihood_categorical(val_output, val_target)/len(val_data)
+                    val_loss += loss.item()
 
-                #accuracy
-                _, predicted = torch.max(val_output, -1)
-                correct = (predicted == val_target).sum().item()
-                val_accuracy += correct / len(val_target)
+                    #accuracy
+                    _, predicted = torch.max(val_output, -1)
+                    correct = (predicted == val_target).sum().item()
+                    val_accuracy += correct / len(val_target)
 
 
             val_accuracy = val_accuracy / len(test_loader)
@@ -1582,6 +1610,7 @@ class ConvBlock_rank1(torch.nn.Module):
 class Simple_rank1_CNN(torch.nn.Module):
     def __init__(self, config):
         super(Simple_rank1_CNN, self).__init__()
+        self.config = config
         self.image_size = config.model.image_size
         self.conv_layers = config.model.conv_layers
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -1643,7 +1672,6 @@ class Simple_rank1_CNN(torch.nn.Module):
         return loss
    
     def train(self, train_loader, test_loader):
-        # losses, neg_log_likelihoods, kl_divergences = [], [], []
 
         for epoch in range(self.config.hyper.epochs):
             
@@ -1676,23 +1704,24 @@ class Simple_rank1_CNN(torch.nn.Module):
         
             val_loss = 0.0
             accuracy = 0.0
-            for batch_idx, (val_data, val_target) in enumerate(test_loader):
-                val_data, val_target = val_data.to(self.device), val_target.to(self.device)
-                val_output = self(val_data)
+            with torch.no_grad():
+                for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                    val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                    val_output = self(val_data)
 
-                val_negative_log_likelihood = self.neg_log_likelihood_categorical(val_output, val_target)
-                val_kl_divergence_u = self.kl_divergence_u()*len(val_data)/len(test_loader.dataset)
-                val_kl_divergence_v = self.kl_divergence_v()*len(val_data)/len(test_loader.dataset)
-                val_log_prob_w = self.log_prob_w()*len(val_data)/len(test_loader.dataset)
+                    val_negative_log_likelihood = self.neg_log_likelihood_categorical(val_output, val_target)
+                    val_kl_divergence_u = self.kl_divergence_u()*len(val_data)/len(test_loader.dataset)
+                    val_kl_divergence_v = self.kl_divergence_v()*len(val_data)/len(test_loader.dataset)
+                    val_log_prob_w = self.log_prob_w()*len(val_data)/len(test_loader.dataset)
 
-                loss = val_negative_log_likelihood + val_kl_divergence_u + val_kl_divergence_v - val_log_prob_w
-                val_loss += loss.item()
+                    loss = val_negative_log_likelihood + val_kl_divergence_u + val_kl_divergence_v - val_log_prob_w
+                    val_loss += loss.item()
 
-             
-                #accuracy
-                _, predicted = torch.max(val_output, -1)
-                correct = (predicted == val_target).sum().item()
-                accuracy += correct / len(val_target)
+                
+                    #accuracy
+                    _, predicted = torch.max(val_output, -1)
+                    correct = (predicted == val_target).sum().item()
+                    accuracy += correct / len(val_target)
 
             accuracy = accuracy / len(test_loader)
 
