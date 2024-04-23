@@ -1483,22 +1483,23 @@ class Conv2d_Rank1(torch.nn.Module):
         self.padding = padding
         self.log_scaler = 1.0
         self.epsilon = 1e-6
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # Shared convolutional filters
         # self.shared_weight = nn.Parameter(torch.Tensor(out_channels, in_channels, kernel_size, kernel_size))
         self.shared_weight = torch.nn.Parameter(torch.Tensor(out_channels, in_channels, kernel_size, kernel_size).normal_(0, 1.0))
-        self.prior_mu_weight = torch.zeros_like(self.shared_weight)+prior_mu
-        self.prior_sigma_weight = torch.zeros_like(self.shared_weight)+prior_sigma
+        self.prior_mu_weight = (torch.zeros_like(self.shared_weight)+prior_mu).to(self.device)
+        self.prior_sigma_weight = (torch.zeros_like(self.shared_weight)+prior_sigma).to(self.device)
 
         self.bias = torch.nn.Parameter(torch.Tensor(out_channels)) if bias else None
-        self.prior_mu_bias = torch.zeros_like(self.bias)+prior_mu
-        self.prior_sigma_bias = torch.zeros_like(self.bias)+prior_sigma
+        self.prior_mu_bias = (torch.zeros_like(self.bias)+prior_mu).to(self.device)
+        self.prior_sigma_bias = (torch.zeros_like(self.bias)+prior_sigma).to(self.device)
         if self.bias is not None:
             torch.nn.init.zeros_(self.bias)
 
         # Rank-1 factors for each ensemble member
-        self.rank1_r = torch.randn(ensemble_size, 1, out_channels, 1, 1)
-        self.rank1_s = torch.randn(ensemble_size, 1, in_channels, 1, 1)
+        self.rank1_r = torch.randn(ensemble_size, 1, out_channels, 1, 1).to(self.device)
+        self.rank1_s = torch.randn(ensemble_size, 1, in_channels, 1, 1).to(self.device)
 
         self.rank1_r_mean = Parameter(self.rank1_r)
         self.rank1_r_log_std = Parameter(torch.zeros_like(self.rank1_r)-5.*self.log_scaler)
@@ -1507,11 +1508,11 @@ class Conv2d_Rank1(torch.nn.Module):
         self.rank1_s_log_std = Parameter(torch.zeros_like(self.rank1_s)-5.*self.log_scaler)
 
         # Prior parameters
-        self.prior_mu_r = torch.zeros_like(self.rank1_r_mean)+prior_mu
-        self.prior_sigma_r = torch.zeros_like(self.rank1_r_mean)+prior_sigma
+        self.prior_mu_r = (torch.zeros_like(self.rank1_r_mean)+prior_mu).to(self.device)
+        self.prior_sigma_r = (torch.zeros_like(self.rank1_r_mean)+prior_sigma).to(self.device)
 
-        self.prior_mu_s = torch.zeros_like(self.rank1_s_mean)+prior_mu
-        self.prior_sigma_s = torch.zeros_like(self.rank1_s_mean)+prior_sigma
+        self.prior_mu_s = (torch.zeros_like(self.rank1_s_mean)+prior_mu).to(self.device)
+        self.prior_sigma_s = (torch.zeros_like(self.rank1_s_mean)+prior_sigma).to(self.device)
         
 
     @property
