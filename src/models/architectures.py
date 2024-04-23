@@ -112,18 +112,18 @@ class FFNN_DeepEnsemble:
 # Lightweight Normal distribution class
 class Normal():
     def __init__(self, mu, std):
-        self.mu = mu
-        self.std = std
-        self.shape = torch.broadcast_shapes(mu.shape, std.shape)
-        self.device = "cuda" if torch.cuda.is_available() else "cpu" 
         
+        self.device = "cuda" if torch.cuda.is_available() else "cpu" 
+        self.mu = mu.to(self.device)
+        self.std = std.to(self.device)
+        self.shape = torch.broadcast_shapes(mu.shape, std.shape)
         
         
     def log_prob(self, x):
         return torch.sum(- (x - self.mu)**2 / (2*self.std**2) - .5*torch.log(2*torch.pi*self.std**2))
     
     def rsample(self):
-        return torch.randn(self.shape, device=self.mu.device) * self.std + self.mu
+        return torch.randn(self.shape, device=self.device) * self.std + self.mu
     
 # Bayesian linear layer
 class Linear(torch.nn.Module):
@@ -1042,7 +1042,7 @@ class BayesianConv2d(torch.nn.Module):
         self.padding = padding
         self.epsilon = 1e-6
         self.log_scaler = 1.
-        # self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
         # Define size for weight and bias
@@ -1063,14 +1063,14 @@ class BayesianConv2d(torch.nn.Module):
         self.prior_mean = prior_mu 
         self.prior_sigma = prior_sigma 
 
-        self.prior_mu_weight = torch.zeros_like(self.weight)+prior_mu
-        self.prior_sigma_weight = torch.zeros_like(self.weight)+prior_sigma
+        self.prior_mu_weight = (torch.zeros_like(self.weight)+prior_mu).to(self.device)
+        self.prior_sigma_weight = (torch.zeros_like(self.weight)+prior_sigma).to(self.device)
 
-        self.prior_mu_bias = torch.zeros_like(self.bias)+prior_mu
-        self.prior_sigma_bias = torch.zeros_like(self.bias)+prior_sigma
+        self.prior_mu_bias = (torch.zeros_like(self.bias)+prior_mu).to(self.device)
+        self.prior_sigma_bias = (torch.zeros_like(self.bias)+prior_sigma).to(self.device)
 
         
-        # self.to(self.device)
+        self.to(self.device)
 
 
 
@@ -1119,8 +1119,7 @@ class ConvBlock_simpleBNN(torch.nn.Module):
         self.conv = BayesianConv2d(in_channels, out_channels, kernel_size, stride, padding)
         self.pool = torch.nn.MaxPool2d(2)
         self.relu = torch.nn.ReLU()
-        # self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        # self.to(self.device)
+        
 
     def forward(self, x):
         x = self.conv(x)
