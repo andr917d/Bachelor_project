@@ -1065,6 +1065,9 @@ class BayesianConv2d(torch.nn.Module):
         self.prior_mu_bias = torch.zeros_like(self.bias)+prior_mu
         self.prior_sigma_bias = torch.zeros_like(self.bias)+prior_sigma
 
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.to(self.device)
+
 
 
     def forward(self, input):
