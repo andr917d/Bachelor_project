@@ -1115,6 +1115,8 @@ class ConvBlock_simpleBNN(torch.nn.Module):
         self.conv = BayesianConv2d(in_channels, out_channels, kernel_size, stride, padding)
         self.pool = torch.nn.MaxPool2d(2)
         self.relu = torch.nn.ReLU()
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.to(self.device)
 
     def forward(self, x):
         x = self.conv(x)
