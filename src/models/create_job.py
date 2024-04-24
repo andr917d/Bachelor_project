@@ -31,7 +31,7 @@ def main(config):
                 hyper.lr={config.hyper.lr} 
                 hyper.epochs={config.hyper.epochs}
                 hyper.batch_size={config.hyper.batch_size}
-                model.name={config.hyper.model_name}
+                model.name={config.model.name}
                 model.conv_layers={config.model.conv_layers}
                 bsub.name={config.bsub.name}
                 """
