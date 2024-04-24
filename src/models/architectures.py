@@ -829,7 +829,6 @@ class ConvBlock_simple(torch.nn.Module):
 
 
 class CNN_simple(torch.nn.Module):
-    # def __init__(self, conv_layers, num_classes=10, image_size=28):
     def __init__(self, config):
         super(CNN_simple, self).__init__()
         self.config = config
@@ -1293,7 +1292,7 @@ class ConvolutionalBNN(torch.nn.Module):
     
 # Convolutional layer with BatchEnsemble
 class Conv2dBatchEnsemble(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, ensemble_size, stride=1, padding=0, bias=True):
+    def __init__(self, in_channels, out_channels, kernel_size, ensemble_size, stride=1, padding=1, bias=True):
         super(Conv2dBatchEnsemble, self).__init__()
         self.ensemble_size = ensemble_size
         self.stride = stride

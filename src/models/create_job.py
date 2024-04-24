@@ -31,6 +31,9 @@ def main(config):
                 hyper.lr={config.hyper.lr} 
                 hyper.epochs={config.hyper.epochs}
                 hyper.batch_size={config.hyper.batch_size}
+                model_name={config.hyper.model_name}
+                model.conv_layers={config.model.conv_layers}
+                bsub.name={config.bsub.name}
                 """
     command = command.replace("\n", " ")
     command = " ".join(command.split())
