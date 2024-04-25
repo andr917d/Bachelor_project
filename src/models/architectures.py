@@ -1379,8 +1379,8 @@ class BatchEnsemble_CNN(torch.nn.Module):
         self.conv_blocks = torch.nn.ModuleList([ConvBlock(*layer) for layer in self.conv_layers])
         self.ensemble_size = self.conv_layers[0][3]
         final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
-        self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 1024)
-        self.fc = torch.nn.Linear(1024, config.model.num_classes)
+        self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 32)
+        self.fc = torch.nn.Linear(32, config.model.num_classes)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
         self.to(self.device)
@@ -1443,7 +1443,7 @@ class BatchEnsemble_CNN(torch.nn.Module):
                     val_accuracy += correct / len(val_target)
 
 
-            val_accuracy = val_accuracy / len(test_loader)
+            val_accuracy = val_accuracy / (len(test_loader) * self.ensemble_size)
 
 
             
@@ -1625,8 +1625,8 @@ class Simple_rank1_CNN(torch.nn.Module):
         self.conv_blocks = torch.nn.ModuleList([ConvBlock_rank1(*layer) for layer in self.conv_layers])
         self.ensemble_size = self.conv_layers[0][3]
         final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
-        self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 1024)
-        self.fc = torch.nn.Linear(1024, config.model.num_classes)
+        self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 32)
+        self.fc = torch.nn.Linear(32, config.model.num_classes)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
         self.to(self.device)
@@ -1731,8 +1731,8 @@ class Simple_rank1_CNN(torch.nn.Module):
                     correct = (predicted == val_target).sum().item()
                     accuracy += correct / len(val_target)
 
-            accuracy = accuracy / len(test_loader)
-
+             # also divide by ensemble size
+            accuracy = accuracy / (len(test_loader) * self.ensemble_size)  
             #logging
             print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss} \tValidation Accuracy: {accuracy}')
             wandb.log({"training_loss": train_loss, "kl_divergence_u": kl_u, "kl_divergence_v": kl_v, "log_prob_w": log_p_w, "val_loss": val_loss, "val_accuracy": accuracy})

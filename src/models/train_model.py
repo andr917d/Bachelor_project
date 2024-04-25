@@ -76,7 +76,7 @@ def init_model(model_name, config):
 def main(config):
     print(f"configuration: \n {OmegaConf.to_yaml(config)}")
     
-    # Initiate wandb logger
+    # # Initiate wandb logger
     try:
         # project is the name of the project in wandb, entity is the username
         # You can also add tags, group etc.

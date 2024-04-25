@@ -21,7 +21,7 @@ def main(config):
                 -n {config.bsub.cpu_num}
                 -R "rusage[mem={config.bsub.cpu_mem}GB]"
                 -R "span[hosts=1]"
-                -W 24:00
+                -W 3:00
                 -B 
                 -N 
                 -o lsf_logs/gpu_%J.out
@@ -31,8 +31,8 @@ def main(config):
                 hyper.lr={config.hyper.lr} 
                 hyper.epochs={config.hyper.epochs}
                 hyper.batch_size={config.hyper.batch_size}
+                hyper.step_size={config.hyper.step_size}
                 model.name={config.model.name}
-                model.conv_layers={config.model.conv_layers}
                 bsub.name={config.bsub.name}
                 """
     command = command.replace("\n", " ")
