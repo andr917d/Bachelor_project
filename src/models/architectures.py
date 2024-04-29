@@ -1113,8 +1113,9 @@ class BayesianConv2d(torch.nn.Module):
 
 # Convolutional block with Bayesian convolutional layer
 class ConvBlock_simpleBNN(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=1):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=1, pooling = True):
         super(ConvBlock_simpleBNN, self).__init__()
+        self.pooling = pooling
         self.conv = BayesianConv2d(in_channels, out_channels, kernel_size, stride, padding)
         self.pool = torch.nn.MaxPool2d(2)
         self.relu = torch.nn.ReLU()
@@ -1122,8 +1123,9 @@ class ConvBlock_simpleBNN(torch.nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.pool(x)
         x = self.relu(x)
+        if self.pooling:
+            x = self.pool(x)
         return x
     
 # CNN with Bayesian convolutional layers
@@ -1137,9 +1139,8 @@ class ConvolutionalBNN(torch.nn.Module):
 
         self.conv_blocks = torch.nn.ModuleList([ConvBlock_simpleBNN(*layer) for layer in self.conv_layers])
         final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
-        # final_out_channels, final_image_size = 64, 3
-        self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 1024)
-        self.fc = torch.nn.Linear(1024, config.model.num_classes)
+        self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 32)
+        self.fc = torch.nn.Linear(32, config.model.num_classes)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
         self.to(self.device)
@@ -1152,7 +1153,8 @@ class ConvolutionalBNN(torch.nn.Module):
 
         for layer in conv_layers:
             out_channels = layer[1]  # The number of output channels is the second element of the layer tuple
-            image_size = image_size // 2  # Each pooling layer reduces the image size by a factor of 2
+            if layer[-1]:  # Check if pooling is applied in the layer
+                image_size = image_size // 2  # Each pooling layer reduces the image size by a factor of 2
 
         return out_channels, image_size
     
@@ -1262,8 +1264,8 @@ class ConvolutionalBNN(torch.nn.Module):
             accuracy = accuracy / len(test_loader)
 
             #logging
-            print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss}\tLog Likelihood: {log_likelihood}\tLogp: {logp_values}\tLogq: {logq_values}\tAccuracy: {accuracy}')
-            wandb.log({"training_loss": train_loss, "val_loss": val_loss, "log_likelihood": log_likelihood, "logp": logp_values, "logq": logq_values, "val_accuracy": accuracy})
+            print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss}\ Negative log Likelihood: {log_likelihood}\tLogp: {logp_values}\tLogq: {logq_values}\tAccuracy: {accuracy}')
+            wandb.log({"training_loss": train_loss, "val_loss": val_loss, "neg_log_likelihood": log_likelihood, "logp": logp_values, "logq": logq_values, "val_accuracy": accuracy})
 
 
                 
@@ -1597,9 +1599,9 @@ class Conv2d_Rank1(torch.nn.Module):
     
 
 class ConvBlock_rank1(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, ensemble_size, stride=1, padding=1):
+    def __init__(self, in_channels, out_channels, kernel_size, ensemble_size, stride=1, padding=1, prior_mu=0, prior_sigma=1000):
         super(ConvBlock_rank1, self).__init__()
-        self.conv = Conv2d_Rank1(in_channels, out_channels, kernel_size, ensemble_size, stride, padding, bias=True)
+        self.conv = Conv2d_Rank1(in_channels, out_channels, kernel_size, ensemble_size, stride, padding, prior_mu, prior_sigma, bias=True)
         self.pool = torch.nn.MaxPool2d(2)
         self.relu = torch.nn.ReLU()
 
@@ -1735,7 +1737,7 @@ class Simple_rank1_CNN(torch.nn.Module):
             accuracy = accuracy / (len(test_loader) * self.ensemble_size)  
             #logging
             print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss} \tValidation Accuracy: {accuracy}')
-            wandb.log({"training_loss": train_loss, "kl_divergence_u": kl_u, "kl_divergence_v": kl_v, "log_prob_w": log_p_w, "val_loss": val_loss, "val_accuracy": accuracy})
+            wandb.log({"training_loss": train_loss, "neg_log_likelihood": log_likelihood, "kl_divergence_u": kl_u, "kl_divergence_v": kl_v, "log_prob_w": log_p_w, "val_loss": val_loss, "val_accuracy": accuracy})
                 
     
                     
