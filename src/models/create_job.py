@@ -34,6 +34,7 @@ def main(config):
                 hyper.step_size={config.hyper.step_size}
                 data.dataset_name={config.data.dataset_name}
                 model.name={config.model.name}
+                model.num_classes={config.model.num_classes}
                 bsub.name={config.bsub.name}
                 """
     command = command.replace("\n", " ")
