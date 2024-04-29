@@ -4,7 +4,7 @@ from omegaconf import OmegaConf
 import numpy as np
 
 import torch
-from torchvision.datasets import CIFAR10, MNIST
+from torchvision.datasets import CIFAR10, MNIST, CIFAR100
 from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader, TensorDataset, random_split
 from sklearn.datasets import fetch_covtype
@@ -17,6 +17,11 @@ from architectures import Simple_rank1_CNN, BatchEnsemble_CNN, BNN_rank1, BatchE
 def load_cifar10_pytorch():
     train_dataset = CIFAR10(root='./data', train=True, download=True, transform=ToTensor())
     test_dataset = CIFAR10(root='./data', train=False, download=True, transform=ToTensor())
+    return DataLoader(train_dataset, batch_size=64, shuffle=True), DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+def load_cifar100_pytorch():
+    train_dataset = CIFAR100(root='./data', train=True, download=True, transform=ToTensor())
+    test_dataset = CIFAR100(root='./data', train=False, download=True, transform=ToTensor())
     return DataLoader(train_dataset, batch_size=64, shuffle=True), DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 def load_mnist_pytorch():
@@ -91,6 +96,8 @@ def main(config):
     dataset_name = config.data.dataset_name
     if dataset_name == "cifar10":
         train_loader, test_loader = load_cifar10_pytorch()
+    elif dataset_name == "cifar100":
+        train_loader, test_loader = load_cifar100_pytorch()
     elif dataset_name == "mnist":
         train_loader, test_loader = load_mnist_pytorch()
     elif dataset_name == "forest_cover":
