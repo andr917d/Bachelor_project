@@ -10,9 +10,8 @@ from torch.utils.data import DataLoader, TensorDataset, random_split
 from sklearn.datasets import fetch_covtype
 from torch import optim
 import matplotlib.pyplot as plt
-
-
 from architectures import Simple_rank1_CNN, BatchEnsemble_CNN, BNN_rank1, BatchEnsemble_FFNN, BNN, FFNN_simple, FFNN_DeepEnsemble, CNN_DeepEnsemble, ConvolutionalBNN, CNN_simple
+from helper_functions import get_probabilities, get_probabilities_dataset, calculate_entropy, calculate_predictive_entropy, calculate_mutual_information, plot_calibration_curve
 
 def load_cifar10_pytorch():
     train_dataset = CIFAR10(root='./data', train=True, download=True, transform=ToTensor())
@@ -110,6 +109,17 @@ def main(config):
     torch.manual_seed(config.constants.seed)
 
     model.train(train_loader, test_loader)
+
+    #calibration curve
+    probabilities, labels = get_probabilities_dataset(test_loader, model)
+
+    probabilities = probabilities.mean(dim=0).cpu().detach().numpy() #average over the forward passes (ensemble members)
+    labels = labels.cpu().detach().numpy()
+    n_bins = 10
+    plot_calibration_curve(labels, probabilities, n_bins)
+
+
+
 
     
     
