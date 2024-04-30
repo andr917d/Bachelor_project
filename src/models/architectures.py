@@ -1126,7 +1126,6 @@ class ConvBlock_simpleBNN(torch.nn.Module):
         x = self.relu(x)
         if self.pooling:
             x = self.pool(x)
-        #x = self.relu(x)
         return x
     
 # CNN with Bayesian convolutional layers
