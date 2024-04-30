@@ -1032,7 +1032,7 @@ class CNN_DeepEnsemble:
 
 # Bayesian convolutional layer 
 class BayesianConv2d(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=1, prior_mu=0.0, prior_sigma=10000.):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=1, prior_mu=0.0, prior_sigma=1000.):
         super(BayesianConv2d, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -1040,7 +1040,7 @@ class BayesianConv2d(torch.nn.Module):
         self.stride = stride
         self.padding = padding
         self.epsilon = 1e-6
-        self.log_scaler = 0.1
+        self.log_scaler = 1
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -1126,6 +1126,7 @@ class ConvBlock_simpleBNN(torch.nn.Module):
         x = self.relu(x)
         if self.pooling:
             x = self.pool(x)
+        #x = self.relu(x)
         return x
     
 # CNN with Bayesian convolutional layers
@@ -1139,8 +1140,8 @@ class ConvolutionalBNN(torch.nn.Module):
 
         self.conv_blocks = torch.nn.ModuleList([ConvBlock_simpleBNN(*layer) for layer in self.conv_layers])
         final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
-        self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 1024)
-        self.fc = torch.nn.Linear(1024, config.model.num_classes)
+        self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 32)
+        self.fc = torch.nn.Linear(32, config.model.num_classes)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
         self.to(self.device)
