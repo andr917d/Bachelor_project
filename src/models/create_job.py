@@ -32,6 +32,7 @@ def main(config):
                 hyper.epochs={config.hyper.epochs}
                 hyper.batch_size={config.hyper.batch_size}
                 hyper.step_size={config.hyper.step_size}
+                hyper.sigma_prior={config.hyper.sigma_prior}
                 data.dataset_name={config.data.dataset_name}
                 model.name={config.model.name}
                 model.num_classes={config.model.num_classes}
