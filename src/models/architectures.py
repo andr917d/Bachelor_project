@@ -1599,20 +1599,29 @@ class Conv2d_Rank1(torch.nn.Module):
     
 
 class ConvBlock_rank1(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, ensemble_size, stride=1, padding=1, prior_mu=0, prior_sigma=1000):
+    def __init__(self, in_channels, out_channels, kernel_size, ensemble_size, stride=1, padding=1, pooling=True, prior_mu=0, prior_sigma=1000):
         super(ConvBlock_rank1, self).__init__()
         self.conv = Conv2d_Rank1(in_channels, out_channels, kernel_size, ensemble_size, stride, padding, prior_mu, prior_sigma, bias=True)
         self.pool = torch.nn.MaxPool2d(2)
         self.relu = torch.nn.ReLU()
+        self.pooling = pooling
 
     def forward(self, x):
         batch_size = x.size(-4)
         ensemble_size = self.conv.ensemble_size
         x = self.conv(x)
-        x = x.view(ensemble_size*batch_size, x.size(-3), x.size(-2), x.size(-1)) # combine ensemble and batch size for pooling
-        x = self.pool(x)
         x = self.relu(x)
-        x = x.view(ensemble_size, batch_size, x.size(-3), x.size(-2), x.size(-1))
+        # print(f'Before reshaping shape: {x.shape}')
+
+        # x = x.view(ensemble_size*batch_size, x.size(-3), x.size(-2), x.size(-1)) # combine ensemble and batch size for pooling
+        # x = self.pool(x)
+        # x = self.relu(x)
+        if self.pooling:
+            x = x.view(ensemble_size*batch_size, x.size(-3), x.size(-2), x.size(-1)) # combine ensemble and batch size for pooling
+            x = self.pool(x)
+            x = x.view(ensemble_size, batch_size, x.size(-3), x.size(-2), x.size(-1))
+
+        # x = x.view(ensemble_size, batch_size, x.size(-3), x.size(-2), x.size(-1))
         # print(f'After reshaping shape: {x.shape}')
         return x
     
@@ -1624,7 +1633,7 @@ class Simple_rank1_CNN(torch.nn.Module):
         self.image_size = config.model.image_size
         self.conv_layers = config.model.conv_layers
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.conv_blocks = torch.nn.ModuleList([ConvBlock_rank1(*layer) for layer in self.conv_layers])
+        self.conv_blocks = torch.nn.ModuleList([ConvBlock_rank1(*layer, prior_sigma=config.hyper.sigma_prior) for layer in self.conv_layers])
         self.ensemble_size = self.conv_layers[0][3]
         final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
         self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 32)
@@ -1646,8 +1655,11 @@ class Simple_rank1_CNN(torch.nn.Module):
     def calculate_final_layer_details(self, conv_layers):
         image_size = self.image_size
         out_channels = conv_layers[-1][1]
-        for layer in conv_layers:      
-            image_size //= 2  # MaxPool2d layer
+        for layer in conv_layers:
+            if layer[-3]:
+                image_size //= 2 # MaxPool2d layer
+
+            # image_size //= 2  # MaxPool2d layer
         return out_channels, image_size
     
 
