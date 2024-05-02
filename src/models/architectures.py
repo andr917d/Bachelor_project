@@ -1656,7 +1656,7 @@ class Simple_rank1_CNN(torch.nn.Module):
         image_size = self.image_size
         out_channels = conv_layers[-1][1]
         for layer in conv_layers:
-            if layer[-3]:
+            if layer[6]: # Check if pooling is applied in the layer
                 image_size //= 2 # MaxPool2d layer
 
             # image_size //= 2  # MaxPool2d layer
