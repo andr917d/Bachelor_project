@@ -106,7 +106,7 @@ def main(config):
 
 
     model = init_model(config.model.name, config)
-    torch.manual_seed(config.constants.seed)
+    # torch.manual_seed(config.constants.seed)
 
     model.train(train_loader, test_loader)
 

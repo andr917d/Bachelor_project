@@ -1209,6 +1209,7 @@ class ConvolutionalBNN(torch.nn.Module):
 
         for epoch in range(self.config.hyper.epochs):
             
+            
             train_loss = 0.0
             log_likelihood = 0.0
             logp_values = 0.0
