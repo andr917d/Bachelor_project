@@ -1,7 +1,7 @@
 import torch
 from torch.nn.parameter import Parameter
 import os
-# import wandb
+import wandb
 
 #Feedforward neural network architectures
 
