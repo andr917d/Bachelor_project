@@ -1113,10 +1113,10 @@ class BayesianConv2d(torch.nn.Module):
 
 # Convolutional block with Bayesian convolutional layer
 class ConvBlock_simpleBNN(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=1, pooling = True):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=1, pooling = True, prior_sigma=10):
         super(ConvBlock_simpleBNN, self).__init__()
         self.pooling = pooling
-        self.conv = BayesianConv2d(in_channels, out_channels, kernel_size, stride, padding)
+        self.conv = BayesianConv2d(in_channels, out_channels, kernel_size, stride, padding, prior_sigma=prior_sigma)
         self.pool = torch.nn.MaxPool2d(2)
         self.relu = torch.nn.ReLU()
         
@@ -1137,7 +1137,7 @@ class ConvolutionalBNN(torch.nn.Module):
         self.conv_layers = config.model.conv_layers
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        self.conv_blocks = torch.nn.ModuleList([ConvBlock_simpleBNN(*layer) for layer in self.conv_layers])
+        self.conv_blocks = torch.nn.ModuleList([ConvBlock_simpleBNN(*layer, prior_sigma=self.config.hyper.sigma_prior) for layer in self.conv_layers])
         final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
         self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 1024)
         self.fc = torch.nn.Linear(1024, config.model.num_classes)
