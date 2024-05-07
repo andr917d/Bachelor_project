@@ -1139,8 +1139,8 @@ class ConvolutionalBNN(torch.nn.Module):
 
         self.conv_blocks = torch.nn.ModuleList([ConvBlock_simpleBNN(*layer) for layer in self.conv_layers])
         final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
-        self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 32)
-        self.fc = torch.nn.Linear(32, config.model.num_classes)
+        self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 1024)
+        self.fc = torch.nn.Linear(1024, config.model.num_classes)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
         self.to(self.device)
@@ -1193,6 +1193,13 @@ class ConvolutionalBNN(torch.nn.Module):
 
     def neg_log_likelihood_categorical(self, y_pred, y_true):
         return torch.nn.functional.cross_entropy(y_pred, y_true, reduction='sum')
+        # y_true = torch.nn.functional.one_hot(y_true, num_classes=y_pred.shape[1])
+
+        # log_probs = torch.nn.functional.log_softmax(y_pred, dim=1)
+        # loss = -torch.sum(y_true * log_probs)
+        
+
+
     
     def train(self, train_loader, test_loader):
 
@@ -1209,7 +1216,7 @@ class ConvolutionalBNN(torch.nn.Module):
 
         for epoch in range(self.config.hyper.epochs):
             
-            
+
             train_loss = 0.0
             log_likelihood = 0.0
             logp_values = 0.0

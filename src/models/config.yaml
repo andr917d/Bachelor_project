@@ -1,5 +1,5 @@
 hyper:
-  lr: 0.01
+  lr: 0.0001
   epochs: 15
   batch_size: 64
   step_size: 50
@@ -17,8 +17,8 @@ model:
   #                                                  (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False)]
 
 # For ConvolutionalBNN layer: [in_channels, out_channels, kernel_size, stride, padding, pooling]
-  conv_layers: [[3, 64, 3, 1, 1, True], [64, 128, 3, 1, 1, True], [128, 256, 3, 1, 1, True]]
-  #               [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False]]
+  conv_layers: [[3, 64, 3, 1, 1, True], [64, 128, 3, 1, 1, True], [128, 256, 3, 1, 1, True],
+                [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False]]
 
 
   # conv_layers: [[3, 64, 3, 10, 1, 1, True], [64, 128, 3, 10, 1, 1, True], [128, 256, 3, 10, 1, 1, True],
