@@ -1,7 +1,7 @@
 import torch
 from torch.nn.parameter import Parameter
 import os
-import wandb
+# import wandb
 
 #Feedforward neural network architectures
 
@@ -232,26 +232,38 @@ class BNN(torch.nn.Module):
     #     return self.blinear1.log_prob_p() + self.blinear2.log_prob_p() + self.blinear3.log_prob_p()
     
     
-    def __init__(self, input_size, hidden_sizes, output_size, mu_prior=0.0, sigma_prior=1.0):
+    # def __init__(self, input_size, hidden_sizes, output_size, mu_prior=0.0, sigma_prior=1.0):
+    def __init__(self, config):
         super().__init__()
-        self.hidden_sizes = hidden_sizes
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.hidden_sizes = config.model.hidden_sizes
+        self.input_size = config.model.input_size
+        self.output_size = config.model.output_size
+        self.input_size = config.model.input_size
+        self.output_size = config.model.output_size
+        self.sigma_prior = config.hyper.sigma_prior
+        self.mu_prior = config.hyper.mu_prior
+        self.config = config
+  
+
         self.linears = torch.nn.ModuleList()
         self.relu = torch.nn.ReLU()
         
 
         # Create linear layers
-        prev_size = input_size
-        for size in hidden_sizes:
-            linear = Linear(prev_size, size, mu_prior, sigma_prior)
+        prev_size = self.input_size
+        for size in self.hidden_sizes:
+            linear = Linear(prev_size, size, self.mu_prior, self.sigma_prior)
             self.linears.append(linear)
             prev_size = size
 
-        self.output_linear = Linear(prev_size, output_size, mu_prior, sigma_prior)
+        self.output_linear = Linear(prev_size, self.output_size, self.mu_prior, self.sigma_prior)
 
         self.log_variance = Parameter(torch.tensor(0.))
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
+        self.to(self.device)
 
     def forward(self, x):
         for linear in self.linears:
@@ -653,6 +665,7 @@ class BNN_rank1(torch.nn.Module):
 
     def __init__(self, input_size, hidden_sizes, output_size, ensemble_size, mu_prior=0.0, sigma_prior=1.0):
         super().__init__()
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.hidden_sizes = hidden_sizes
         self.linears = torch.nn.ModuleList()
         self.relu = torch.nn.ReLU()
@@ -672,6 +685,7 @@ class BNN_rank1(torch.nn.Module):
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
+        self.to(self.device)
 
     def forward(self, x):
         for linear in self.linears:
