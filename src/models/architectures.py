@@ -320,7 +320,7 @@ class BNN(torch.nn.Module):
 
 
         dataset_size = len(train_loader.dataset)
-        for epoch in range(self.config.hyper.num_epochs):
+        for epoch in range(self.config.hyper.epochs):
             train_loss = 0.0
             log_likelihood = 0.0
             logp_values = 0.0
