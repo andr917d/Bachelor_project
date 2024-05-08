@@ -261,8 +261,8 @@ class BNN(torch.nn.Module):
 
         self.log_variance = Parameter(torch.tensor(0.))
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
         self.to(self.device)
 
     def forward(self, x):
@@ -316,43 +316,74 @@ class BNN(torch.nn.Module):
    
         return loss
     
-    def train(self, train_loader, num_epochs, log_interval=30):
+    def train(self, train_loader, test_loader):
 
-        losses, neg_log_likelihoods, kl_divergences = [], [], []
 
         dataset_size = len(train_loader.dataset)
-        for epoch in range(num_epochs):
+        for epoch in range(self.config.hyper.num_epochs):
+            train_loss = 0.0
+            log_likelihood = 0.0
+            logp_values = 0.0
+            logq_values = 0.0
+
             for batch_idx, (data, target) in enumerate(train_loader):
+                data, target = data.to(self.device), target.to(self.device)
             
                 self.optimizer.zero_grad()
                 self.sample()
                 output = self(data) 
 
-                neg_log_likelihood = self.neg_log_likelihood_classification(output, target)*(dataset_size/len(data))
-                
+                # neg_log_likelihood = self.neg_log_likelihood_classification(output, target)*(dataset_size/len(data))
+                neg_log_likelihood = self.neg_log_likelihood_classification(output, target)
 
-                logp = self.log_prob_p()
-                logq = self.log_prob_q()
+                logp = self.log_prob_p()*len(data)/dataset_size
+                logq = self.log_prob_q()*len(data)/dataset_size
 
                 loss = neg_log_likelihood + logq - logp
                 loss.backward()
                 self.optimizer.step()
                 
-                if batch_idx % log_interval == 0:
-                    print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)}'
-                        f' ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
-                    print(f'logp: {logp.item():.6f}, logq: {logq.item():.6f}')
+                train_loss += loss.item()
+                log_likelihood += neg_log_likelihood.item()
+                logp_values += logp.item()
+                logq_values += logq.item()
+            
 
-                losses.append(loss.item())
-                neg_log_likelihoods.append(neg_log_likelihood.item())
-                kl_divergences.append(logq.item() - logp.item())
+            #validation loss
+            val_loss = 0.0
+            accuracy = 0.0
 
+            with torch.no_grad():
+                for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                    val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                    val_output = self(val_data)
                     
+                    neg_log_likelihood = self.neg_log_likelihood_classification(val_output, val_target)
+                    logp = self.log_prob_p()*len(val_data)/len(test_loader.dataset)
+                    logq = self.log_prob_q()*len(val_data)/len(test_loader.dataset)
+                    val_loss = neg_log_likelihood + logq - logp
+
+
+
+                    #calculate accuracy
+                    _, predicted = torch.max(val_output, -1)
+                    correct = (predicted == val_target).sum().item()
+                    accuracy_batch = correct / len(val_target)
+                    # print(f'Validation accuracy: {accuracy_batch}')
+                    accuracy += accuracy_batch
+
+            accuracy = accuracy / len(test_loader)
+
+            #logging
+            print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss}\ Negative log Likelihood: {log_likelihood}\tLogp: {logp_values}\tLogq: {logq_values}\tAccuracy: {accuracy}')
+            wandb.log({"training_loss": train_loss, "val_loss": val_loss, "neg_log_likelihood": log_likelihood, "logp": logp_values, "logq": logq_values, "val_accuracy": accuracy})
+
+       
             self.scheduler.step()  
+
+        print('Finished Training')
         
-        #return losses, neg_log_likelihoods, kl_divergences and the model
-        return losses, neg_log_likelihoods, kl_divergences
-    
+  
     def save_model(self, directory='models', filename='FFNN_BNN.pt'):
         directory = os.path.join(os.getcwd(), directory)
         if not os.path.exists(directory):
@@ -431,26 +462,32 @@ class EnsembleLinear(torch.nn.Module):
 
 # Ensemble network
 class BatchEnsemble_FFNN(torch.nn.Module):
-    def __init__(self, input_size, hidden_sizes, output_size, ensemble_size, mu_prior=0.0, sigma_prior=1.0):
+    # def __init__(self, input_size, hidden_sizes, output_size, ensemble_size):
+    def __init__(self, config):
         super().__init__()
-        self.hidden_sizes = hidden_sizes
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.hidden_sizes = config.model.hidden_sizes
+        self.input_size = config.model.input_size
+        self.output_size = config.model.output_size
+
         self.linears = torch.nn.ModuleList()
         self.relu = torch.nn.ReLU()
-        self.ensemble_size = ensemble_size
+        self.ensemble_size = config.model.ensemble_size
         
 
         # Create linear layers
-        prev_size = input_size
-        for size in hidden_sizes:
-            linear = EnsembleLinear(prev_size, size, ensemble_size)
+        prev_size = self.input_size
+        for size in self.hidden_sizes:
+            linear = EnsembleLinear(prev_size, size, self.ensemble_size)
             self.linears.append(linear)
             prev_size = size
 
-        self.output_linear = EnsembleLinear(prev_size, output_size, ensemble_size)
+        self.output_linear = EnsembleLinear(prev_size, self.output_size, self.ensemble_size)
         self.log_variance = Parameter(torch.tensor(0.))
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
+        self.to(self.device)
 
     def forward(self, x):
         for linear in self.linears:
@@ -488,34 +525,58 @@ class BatchEnsemble_FFNN(torch.nn.Module):
 
         return loss
     
-    def train(self, train_loader, num_epochs, log_interval=30):
+    def train(self, train_loader, test_loader):
             
-            losses = []
-
-            for epoch in range(num_epochs):
-                for batch_idx, (data, target) in enumerate(train_loader):
-                
-                    self.optimizer.zero_grad()
-                    output = self(data) 
-    
-                    neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)
-   
-                    loss = neg_log_likelihood
-                    loss.backward()
-                    self.optimizer.step()
-                    
-                    if batch_idx % log_interval == 0:
-                        print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)}'
-                            f' ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
-    
-                    losses.append(loss.item())
+            # losses = []
+            # for epoch in range(num_epochs):
+            #     for batch_idx, (data, target) in enumerate(train_loader):
+            #         self.optimizer.zero_grad()
+            #         output = self(data) 
+            #         neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)
+            #         loss = neg_log_likelihood
+            #         loss.backward()
+            #         self.optimizer.step()
+            #         losses.append(loss.item())
                  
     
                         
-                self.scheduler.step()  
+            #     self.scheduler.step()  
+
+        for epoch in range(self.config.hyper.epochs):
+
+            train_loss = 0.0
+
+            for batch_idx, (data, target) in enumerate(train_loader):
+                data, target = data.to(self.device), target.to(self.device)
+                self.optimizer.zero_grad()
+                output = self(data) 
+                loss = self.neg_log_likelihood_categorical(output, target)/len(data)
+                loss.backward()
+                self.optimizer.step()
+
+                train_loss += loss.item()
             
-            #return losses
-            return losses
+            val_accuracy = 0.0
+            val_loss = 0.0
+            with torch.no_grad():
+                for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                    val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                    val_output = self(val_data)
+                    loss = self.neg_log_likelihood_categorical(val_output, val_target)/len(val_data)
+                    val_loss += loss.item()
+
+                    #accuracy
+                    _, predicted = torch.max(val_output, -1)
+                    correct = (predicted == val_target).sum().item()
+                    val_accuracy += correct / len(val_target)
+
+
+            val_accuracy = val_accuracy / (len(test_loader) * self.ensemble_size)
+            
+            print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss}\tValidation Accuracy: {val_accuracy}')
+            wandb.log({"training_loss": train_loss, "val_loss": val_loss, "val_accuracy": val_accuracy})
+            
+
 
     def save_model(self, directory='models', filename='FFNN_BatchEnsemble.pt'):
         directory = os.path.join(os.getcwd(), directory)
@@ -663,28 +724,34 @@ class Dense_rank1(torch.nn.Module):
 
 class BNN_rank1(torch.nn.Module):
 
-    def __init__(self, input_size, hidden_sizes, output_size, ensemble_size, mu_prior=0.0, sigma_prior=1.0):
+    # def __init__(self, input_size, hidden_sizes, output_size, ensemble_size, mu_prior=0.0, sigma_prior=1.0):
+    def __init__(self, config):
         super().__init__()
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.hidden_sizes = hidden_sizes
+        self.hidden_sizes = config.model.hidden_sizes
+        self.input_size = config.model.input_size
+        self.output_size = config.model.output_size
+
         self.linears = torch.nn.ModuleList()
         self.relu = torch.nn.ReLU()
-        self.ensemble_size = ensemble_size
-        
+        self.ensemble_size = config.model.ensemble_size
+        self.mu_prior = config.hyper.mu_prior
+        self.sigma_prior = config.hyper.sigma_prior
+
 
         # Create linear layers
-        prev_size = input_size
-        for size in hidden_sizes:
-            linear = Dense_rank1(prev_size, size, ensemble_size, mu_prior, sigma_prior)
+        prev_size = self.input_size
+        for size in self.hidden_sizes:
+            linear = Dense_rank1(prev_size, size, self.ensemble_size, self.mu_prior, self.sigma_prior)
             self.linears.append(linear)
             prev_size = size
 
-        self.output_linear = Dense_rank1(prev_size, output_size, ensemble_size, mu_prior, sigma_prior)
+        self.output_linear = Dense_rank1(prev_size, self.output_size, self.ensemble_size, self.mu_prior, self.sigma_prior)
 
         self.log_variance = Parameter(torch.tensor(0.))
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
         self.to(self.device)
 
     def forward(self, x):
@@ -764,38 +831,97 @@ class BNN_rank1(torch.nn.Module):
     
     def train(self, train_loader, num_epochs, log_interval=30):
                 
-                losses, neg_log_likelihoods, kl_divergences = [], [], []
+                # losses, neg_log_likelihoods, kl_divergences = [], [], []
     
-                for epoch in range(num_epochs):
-                    for batch_idx, (data, target) in enumerate(train_loader):
+                # for epoch in range(num_epochs):
+                #     for batch_idx, (data, target) in enumerate(train_loader):
                     
-                        self.optimizer.zero_grad()
+                #         self.optimizer.zero_grad()
 
-                        self.sample()
+                #         self.sample()
 
-                        output = self(data) 
+                #         output = self(data) 
         
-                        neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)
-                        kl_divergence_u = self.kl_divergence_u()
-                        kl_divergence_v = self.kl_divergence_v()
-                        log_prob_w = self.log_prob_w()
+                #         neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)
+                #         kl_divergence_u = self.kl_divergence_u()
+                #         kl_divergence_v = self.kl_divergence_v()
+                #         log_prob_w = self.log_prob_w()
 
     
-                        loss = neg_log_likelihood + kl_divergence_u + kl_divergence_v - log_prob_w
-                        loss.backward()
-                        self.optimizer.step()
+                #         loss = neg_log_likelihood + kl_divergence_u + kl_divergence_v - log_prob_w
+                #         loss.backward()
+                #         self.optimizer.step()
                         
-                        if batch_idx % log_interval == 0:
-                            print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)}'
-                                f' ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
-                        losses.append(loss.item())
+                #         if batch_idx % log_interval == 0:
+                #             print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)}'
+                #                 f' ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
+                #         losses.append(loss.item())
                     
         
                             
-                    self.scheduler.step()  
+                #     self.scheduler.step()  
+        for epoch in range(self.config.hyper.epochs):
+            
+            train_loss = 0.0
+            log_likelihood = 0.0
+            kl_u = 0.0
+            kl_v = 0.0
+            log_p_w = 0.0
+
+            for batch_idx, (data, target) in enumerate(train_loader):
+                data, target = data.to(self.device), target.to(self.device)
+
+                self.optimizer.zero_grad()
+                self.sample()
+                output = self(data) 
+                neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)
+                kl_divergence_u = self.kl_divergence_u()*len(data)/len(train_loader.dataset)
+                kl_divergence_v = self.kl_divergence_v()*len(data)/len(train_loader.dataset)
+                log_prob_w = self.log_prob_w()*len(data)/len(train_loader.dataset)
+
+                loss = neg_log_likelihood + kl_divergence_u + kl_divergence_v - log_prob_w
+                loss.backward()
+                self.optimizer.step()
+
+                train_loss += loss.item()
+                log_likelihood += neg_log_likelihood.item()
+                kl_u += kl_divergence_u.item()
+                kl_v += kl_divergence_v.item()
+                log_p_w += log_prob_w.item()
+        
+            val_loss = 0.0
+            accuracy = 0.0
+            with torch.no_grad():
+                for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                    val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                    val_output = self(val_data)
+
+                    val_negative_log_likelihood = self.neg_log_likelihood_categorical(val_output, val_target)
+                    val_kl_divergence_u = self.kl_divergence_u()*len(val_data)/len(test_loader.dataset)
+                    val_kl_divergence_v = self.kl_divergence_v()*len(val_data)/len(test_loader.dataset)
+                    val_log_prob_w = self.log_prob_w()*len(val_data)/len(test_loader.dataset)
+
+                    loss = val_negative_log_likelihood + val_kl_divergence_u + val_kl_divergence_v - val_log_prob_w
+                    val_loss += loss.item()
+
                 
-                #return losses
-                return losses
+                    #accuracy
+                    _, predicted = torch.max(val_output, -1)
+                    correct = (predicted == val_target).sum().item()
+                    accuracy += correct / len(val_target)
+
+             # also divide by ensemble size
+            accuracy = accuracy / (len(test_loader) * self.ensemble_size)  
+            #logging
+            print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss} \tValidation Accuracy: {accuracy}')
+            wandb.log({"training_loss": train_loss, "neg_log_likelihood": log_likelihood, "kl_divergence_u": kl_u, "kl_divergence_v": kl_v, "log_prob_w": log_p_w, "val_loss": val_loss, "val_accuracy": accuracy})
+                
+    
+                    
+            self.scheduler.step()
+
+
+          
     
     def save_model(self, directory='models', filename='FFNN_BNN_rank1.pt'):
         directory = os.path.join(os.getcwd(), directory)
