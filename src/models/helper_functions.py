@@ -35,7 +35,8 @@ def get_probabilities(input_images, model):
 
     #get the probabilities
     probabilities = torch.nn.functional.softmax(outputs, dim=-1)
-    return probabilities
+    # return probabilities
+    return probabilities.cpu()
 
 
 
@@ -64,21 +65,22 @@ def get_probabilities(input_images, model):
 
 
     #get the probabilities
-    probabilities = torch.nn.functional.softmax(outputs, dim=-1)
-    return probabilities
+    # probabilities = torch.nn.functional.softmax(outputs, dim=-1)
+    # return probabilities
 
 def get_probabilities_dataset(data_loader, model):
     probabilities = None
     label_list = None
-    for i, (images, labels) in enumerate(data_loader):
+    for images, labels in data_loader:
         images, labels = images.to(model.device), labels.to(model.device)
         batch_probabilities = get_probabilities(images, model)
         if probabilities is None:
             probabilities = batch_probabilities
-            label_list = labels
+            # label_list = labels
+            label_list = labels.cpu()
         else:
             probabilities = torch.cat((probabilities, batch_probabilities), dim=1)
-            label_list = torch.cat((label_list, labels), dim=0)
+            label_list = torch.cat((label_list, labels.cpu()), dim=0)
 
     return probabilities, label_list
 
