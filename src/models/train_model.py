@@ -5,13 +5,17 @@ import numpy as np
 
 import torch
 from torchvision.datasets import CIFAR10, MNIST, CIFAR100
-from torchvision.transforms import ToTensor
+from torchvision import transforms
 from torch.utils.data import DataLoader, TensorDataset, random_split
 from sklearn.datasets import fetch_covtype
 from torch import optim
 import matplotlib.pyplot as plt
 from architectures import Simple_rank1_CNN, BatchEnsemble_CNN, BNN_rank1, BatchEnsemble_FFNN, BNN, FFNN_simple, FFNN_DeepEnsemble, CNN_DeepEnsemble, ConvolutionalBNN, CNN_simple
-from helper_functions import get_probabilities, get_probabilities_dataset, calculate_entropy, calculate_predictive_entropy, calculate_mutual_information, plot_calibration_curve
+# from helper_functions import get_probabilities, get_probabilities_dataset, calculate_entropy, calculate_predictive_entropy, calculate_mutual_information, plot_calibration_curve
+
+#import all helper functions
+from helper_functions import *
+
 
 def load_cifar10_pytorch():
     train_dataset = CIFAR10(root='./data', train=True, download=True, transform=ToTensor())
@@ -27,6 +31,31 @@ def load_mnist_pytorch():
     train_dataset = MNIST(root='./data', train=True, download=True, transform=ToTensor())
     test_dataset = MNIST(root='./data', train=False, download=True, transform=ToTensor())
     return DataLoader(train_dataset, batch_size=64, shuffle=True), DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
+
+class GaussianNoiseTransform:
+    def __init__(self, mean=0., std=1.):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
+ 
+
+def load_cifar10_OOD_pytorch():
+    #we could change this to take any transform
+
+
+
+    # Define the transformations to apply to the images
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        GaussianNoiseTransform(0., 0.1)])  # Apply Gaussian noise with mean 0 and standard deviation 0.1
+    
+    # Load the CIFAR-10 dataset
+    OOD_dataset = CIFAR10(root='./data', train=False, download=True, transform=transform)
+    return DataLoader(OOD_dataset, batch_size=64, shuffle=False)
+    
+
 
 
 def load_forest_cover_pytorch(test_split=0.2, batch_size=64):
@@ -95,6 +124,8 @@ def main(config):
     dataset_name = config.data.dataset_name
     if dataset_name == "cifar10":
         train_loader, test_loader = load_cifar10_pytorch()
+        test_loader_OOD = load_cifar10_ODD_pytorch()
+
     elif dataset_name == "cifar100":
         train_loader, test_loader = load_cifar100_pytorch()
     elif dataset_name == "mnist":
@@ -116,7 +147,10 @@ def main(config):
     probabilities = probabilities.mean(dim=0).cpu().detach().numpy() #average over the forward passes (ensemble members)
     labels = labels.cpu().detach().numpy()
     n_bins = 10
-    plot_calibration_curve(labels, probabilities, n_bins)
+    plot_calibration_curve(labels, probabilities, n_bins, name=config.bsub.name)
+
+    #OOD detection
+    plot_uncertainty_histograms(test_loader, test_loader_OOD, model)
 
 
 

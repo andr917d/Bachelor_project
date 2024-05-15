@@ -84,7 +84,7 @@ def calculate_alerotic_uncertainty(probabilities):
     return entropy_average_predictions
 
 
-def plot_calibration_curve(y_true, y_prob, n_bins=10):
+def plot_calibration_curve(y_true, y_prob, n_bins=10, name='calibration curve'):
     # Initialize lists to store accuracy and confidence for each bin
     accuracy_list = []
 
@@ -142,8 +142,97 @@ def plot_calibration_curve(y_true, y_prob, n_bins=10):
     plt.yticks(np.arange(0, 1.1, 0.1))
     plt.xlabel('Average confidence')
     plt.ylabel('Accuracy')
-    plt.title('Reliability Diagram')
+    plt.title(name)
     plt.legend()
     #save the plot
     plt.savefig('calibration_curve.png')
     # plt.show()
+
+
+
+
+def calculate_entropy_distribution(test_loader, model):
+    entropies = None
+    for i, (images, _) in enumerate(test_loader):
+        probabilities = get_probabilities(images, model)
+        entropy = calculate_predictive_entropy(probabilities)
+        if entropies is None:
+            entropies = entropy
+        else:
+            entropies = torch.cat((entropies, entropy), dim=0)
+
+    return entropies.detach().cpu().numpy()
+
+def calculate_alerotic_uncertainty_distribution(test_loader, model):
+    uncertainties = None
+    for i, (images, _) in enumerate(test_loader):
+        probabilities = get_probabilities(images, model)
+        uncertainty = calculate_alerotic_uncertainty(probabilities)
+        if uncertainties is None:
+            uncertainties = uncertainty
+        else:
+            uncertainties = torch.cat((uncertainties, uncertainty), dim=0)
+
+    return uncertainties.detach().cpu().numpy()
+
+def calculate_mutual_information_distribution(test_loader, model):
+    mutual_informations = None
+    for i, (images, _) in enumerate(test_loader):
+        probabilities = get_probabilities(images, model)
+        mutual_information = calculate_mutual_information(probabilities)
+        if mutual_informations is None:
+            mutual_informations = mutual_information
+        else:
+            mutual_informations = torch.cat((mutual_informations, mutual_information), dim=0)
+
+    return mutual_informations.detach().cpu().numpy()
+
+
+
+def plot_uncertainty_histograms(test_loader, test_loader_OOD, model):
+
+    entropies = calculate_entropy_distribution(test_loader, model)
+    entropies_OOD = calculate_entropy_distribution(test_loader_OOD, model)
+
+    aleatoric_uncertainties = calculate_alerotic_uncertainty_distribution(test_loader, model)
+    aleatoric_uncertainties_OOD = calculate_alerotic_uncertainty_distribution(test_loader_OOD, model)
+
+    epistemic_uncertainties = calculate_mutual_information_distribution(test_loader, model)
+    epistemic_uncertainties_OOD = calculate_mutual_information_distribution(test_loader_OOD, model)
+
+
+    # find max value of all the uncertainties
+    max_value = max(np.max(entropies), np.max(entropies_OOD), np.max(aleatoric_uncertainties), np.max(aleatoric_uncertainties_OOD), 
+                    np.max(epistemic_uncertainties), np.max(epistemic_uncertainties_OOD))
+
+    #ciel the max value to the nearest 0.1
+    max_value = np.ceil(max_value*10)/10
+
+    # Define the bin edges
+    bin_edges = np.arange(start=0, stop=max_value+0.1, step=0.1)  # From 0 to max of uncertainties in steps of 0.1
+
+    fig, axs = plt.subplots(1, 3, figsize=(13,5), sharey=True, tight_layout=True)
+
+    alpha = 0.6
+
+    axs[0].hist(entropies, bins=bin_edges, alpha=alpha, label='entropies')
+    axs[0].hist(entropies_OOD, bins=bin_edges, alpha=alpha, label='entropies OOD')
+    axs[0].set_title('Predictive Entropies')
+    axs[0].set_xlabel('Value')
+    axs[0].set_ylabel('Frequency')
+    axs[0].legend()
+
+    axs[1].hist(aleatoric_uncertainties, bins=bin_edges, alpha=alpha, label='aleatoric uncertainties')
+    axs[1].hist(aleatoric_uncertainties_OOD, bins=bin_edges, alpha=alpha, label='aleatoric uncertainties OOD')
+    axs[1].set_title('Aleatoric Uncertainties')
+    axs[1].set_xlabel('Value')
+    axs[1].legend()
+
+    axs[2].hist(epistemic_uncertainties, bins=bin_edges, alpha=alpha, label='epistemic uncertainties')
+    axs[2].hist(epistemic_uncertainties_OOD, bins=bin_edges, alpha=alpha, label='epistemic uncertainties OOD')
+    axs[2].set_title('Epistemic Uncertainties')
+    axs[2].set_xlabel('Value')
+    axs[2].legend()
+
+    plt.savefig('uncertainty_histograms.png')
+    
