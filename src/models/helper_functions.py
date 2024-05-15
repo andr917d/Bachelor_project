@@ -8,28 +8,59 @@ import numpy as np
 
 def get_probabilities(input_images, model):
 
-     #check if model can sample
-    if hasattr(model, 'sample'):
-        #perform monte carlo sampling
+    #check name of model¨
+    if model.config.model.name == "CNN_simple":
+        outputs = model(input_images.to(model.device)).unsqueeze(0)
+
+    elif model.config.model.name == "ConvolutionalBNN":
         outputs = []
         for i in range(5):
             model.sample()
             output = model(input_images)
             outputs.append(output)
         
-        #check dimensions of output to see if it is BNN or Rank1
-        if len(output.shape) == 2:
-            #append the outputs to the outputs tensor on the first dimension so it is a tensor of shape (4*ensemble_size, batch_size, num_classes)
-            outputs = torch.stack(outputs, dim=0)
+        outputs = torch.stack(outputs, dim=0)
 
-        elif len(output.shape) == 3:
-            #append the outputs to the outputs tensor on the first dimension so it is a tensor of shape (4*ensemble_size, batch_size, num_classes)
-            outputs = torch.cat(outputs, dim=0)
-
-        # outputs = torch.stack(outputs, dim=0)
-    else:
-        #pass the image through the model
+    elif model.config.model.name == "BatchEnsemble_CNN":
         outputs = model(input_images.to(model.device))
+
+    elif model.config.model.name == "Simple_rank1_CNN":
+        outputs = []
+        for i in range(5):
+            model.sample()
+            output = model(input_images)
+            outputs.append(output)
+        
+        outputs = torch.cat(outputs, dim=0)
+
+    #get the probabilities
+    probabilities = torch.nn.functional.softmax(outputs, dim=-1)
+    return probabilities
+
+
+
+    #  #check if model can sample
+    # if hasattr(model, 'sample'):
+    #     #perform monte carlo sampling
+    #     outputs = []
+    #     for i in range(5):
+    #         model.sample()
+    #         output = model(input_images)
+    #         outputs.append(output)
+        
+    #     #check dimensions of output to see if it is BNN or Rank1
+    #     if len(output.shape) == 2:
+    #         #append the outputs to the outputs tensor on the first dimension so it is a tensor of shape (4*ensemble_size, batch_size, num_classes)
+    #         outputs = torch.stack(outputs, dim=0)
+
+    #     elif len(output.shape) == 3:
+    #         #append the outputs to the outputs tensor on the first dimension so it is a tensor of shape (4*ensemble_size, batch_size, num_classes)
+    #         outputs = torch.cat(outputs, dim=0)
+
+    #     # outputs = torch.stack(outputs, dim=0)
+    # else:
+    #     #pass the image through the model
+    #     outputs = model(input_images.to(model.device))
 
 
     #get the probabilities

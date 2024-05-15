@@ -124,7 +124,7 @@ def main(config):
     dataset_name = config.data.dataset_name
     if dataset_name == "cifar10":
         train_loader, test_loader = load_cifar10_pytorch()
-        test_loader_OOD = load_cifar10_ODD_pytorch()
+        test_loader_OOD = load_cifar10_OOD_pytorch()
 
     elif dataset_name == "cifar100":
         train_loader, test_loader = load_cifar100_pytorch()
