@@ -7,10 +7,24 @@ import numpy as np
 
 
 def get_probabilities(input_images, model):
-    #pass the image through the model
-    output = model(input_images)
+
+     #check if model can sample
+    if hasattr(model, 'sample'):
+        #perform monte carlo sampling
+        outputs = []
+        for i in range(5):
+            model.sample()
+            output = model(input_images)
+            outputs.append(output)
+        
+        outputs = torch.stack(outputs, dim=0)
+    else:
+        #pass the image through the model
+        outputs = model(input_images.to(model.device))
+
+
     #get the probabilities
-    probabilities = torch.nn.functional.softmax(output, dim=-1)
+    probabilities = torch.nn.functional.softmax(outputs, dim=-1)
     return probabilities
 
 def get_probabilities_dataset(data_loader, model):

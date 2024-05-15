@@ -111,12 +111,12 @@ def main(config):
     model.train(train_loader, test_loader)
 
     #calibration curve
-    # probabilities, labels = get_probabilities_dataset(test_loader, model)
+    probabilities, labels = get_probabilities_dataset(test_loader, model)
 
-    # probabilities = probabilities.mean(dim=0).cpu().detach().numpy() #average over the forward passes (ensemble members)
-    # labels = labels.cpu().detach().numpy()
-    # n_bins = 10
-    # plot_calibration_curve(labels, probabilities, n_bins)
+    probabilities = probabilities.mean(dim=0).cpu().detach().numpy() #average over the forward passes (ensemble members)
+    labels = labels.cpu().detach().numpy()
+    n_bins = 10
+    plot_calibration_curve(labels, probabilities, n_bins)
 
 
 
