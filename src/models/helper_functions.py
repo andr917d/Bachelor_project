@@ -17,7 +17,16 @@ def get_probabilities(input_images, model):
             output = model(input_images)
             outputs.append(output)
         
-        outputs = torch.stack(outputs, dim=0)
+        #check dimensions of output to see if it is BNN or Rank1
+        if len(output.shape) == 2:
+            #append the outputs to the outputs tensor on the first dimension so it is a tensor of shape (4*ensemble_size, batch_size, num_classes)
+            outputs = torch.stack(outputs, dim=0)
+
+        elif len(output.shape) == 3:
+            #append the outputs to the outputs tensor on the first dimension so it is a tensor of shape (4*ensemble_size, batch_size, num_classes)
+            outputs = torch.cat(outputs, dim=0)
+
+        # outputs = torch.stack(outputs, dim=0)
     else:
         #pass the image through the model
         outputs = model(input_images.to(model.device))
