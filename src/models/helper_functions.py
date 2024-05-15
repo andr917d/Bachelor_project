@@ -14,7 +14,7 @@ def get_probabilities(input_images, model):
 
     elif model.config.model.name == "ConvolutionalBNN":
         outputs = []
-        for i in range(5):
+        for i in range(50):
             model.sample()
             output = model(input_images)
             outputs.append(output)

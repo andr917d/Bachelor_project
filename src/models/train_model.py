@@ -139,7 +139,7 @@ def main(config):
     model = init_model(config.model.name, config)
     # torch.manual_seed(config.constants.seed)
 
-    model.train(train_loader, test_loader)
+    model.train_custom(train_loader, test_loader)
 
     #calibration curve
     probabilities, labels = get_probabilities_dataset(test_loader, model)

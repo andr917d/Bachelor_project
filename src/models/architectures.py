@@ -1009,19 +1009,19 @@ class CNN_simple(torch.nn.Module):
 
     
     
-    def train(self, train_loader):
-        losses = []
-        val_losses = []
+    def train_custom(self, train_loader, test_loader):
+        # losses = []
+        # ttest_losses = []
 
     
         #split the data into training and validation
-        train_size = int(0.95 * len(train_loader.dataset))
+        # train_size = int(0.95 * len(train_loader.dataset))
 
-        train_dataset, val_dataset = torch.utils.data.random_split(train_loader.dataset, [train_size, len(train_loader.dataset) - train_size])
+        # train_dataset, val_dataset = torch.utils.data.random_split(train_loader.dataset, [train_size, len(train_loader.dataset) - train_size])
 
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=train_loader.batch_size, shuffle=True)
-        #test on the whole validation set
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=64, shuffle=False)
+        # train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=train_loader.batch_size, shuffle=True)
+        # #test on the whole validation set
+        # test_loader = torch.utils.data.DataLoader(val_dataset, batch_size=64, shuffle=False)
 
         
 
@@ -1032,7 +1032,7 @@ class CNN_simple(torch.nn.Module):
                 self.optimizer.zero_grad()
                 output = self(data) 
                 
-                loss = torch.nn.functional.cross_entropy(output, target)
+                loss = torch.nn.functional.cross_entropy(output, target, reduction='sum')
                 
                 loss.backward()
                 self.optimizer.step()
@@ -1056,10 +1056,10 @@ class CNN_simple(torch.nn.Module):
             val_loss = 0.0
             accuracy = 0.0
             with torch.no_grad():
-                for batch_idx, (val_data, val_target) in enumerate(val_loader):
+                for batch_idx, (val_data, val_target) in enumerate(test_loader):
                     val_data, val_target = val_data.to(self.device), val_target.to(self.device)
                     val_output = self(val_data)
-                    val_loss = torch.nn.functional.cross_entropy(val_output, val_target)
+                    val_loss = torch.nn.functional.cross_entropy(val_output, val_target, reduction='sum')
                     val_loss += val_loss.item() * len(val_data)
 
                     #calculate accuracy
@@ -1070,14 +1070,14 @@ class CNN_simple(torch.nn.Module):
                     accuracy += accuracy_batch
 
             
-            accuracy = accuracy / len(val_loader)
+            accuracy = accuracy / len(test_loader)
 
             
                 
             
 
             avg_train_loss = train_loss / len(train_loader.dataset)
-            avg_val_loss = val_loss / len(val_loader.dataset)
+            avg_val_loss = val_loss / len(test_loader.dataset)
             print(f'Epoch: {epoch+1}\tTrain Loss: {avg_train_loss}\tValidation Loss: {avg_val_loss}')
             print(f'Validation accuracy: {accuracy}')
             # Logging
@@ -1086,10 +1086,6 @@ class CNN_simple(torch.nn.Module):
             
 
 
-                
-                
-            losses.append(avg_train_loss)
-            val_losses.append(avg_val_loss)
                 
             self.scheduler.step()  
         
@@ -1341,7 +1337,7 @@ class ConvolutionalBNN(torch.nn.Module):
 
 
     
-    def train(self, train_loader, test_loader):
+    def train_custom(self, train_loader, test_loader):
 
         #split the data into training and validation
         # train_size = int(0.95 * len(train_loader.dataset))
@@ -1564,7 +1560,7 @@ class BatchEnsemble_CNN(torch.nn.Module):
 
         return loss
     
-    def train(self, train_loader, test_loader):
+    def train_custom(self, train_loader, test_loader):
 
         for epoch in range(self.config.hyper.epochs):
             train_loss = 0.0
@@ -1841,7 +1837,7 @@ class Simple_rank1_CNN(torch.nn.Module):
         loss = sum(losses)
         return loss
    
-    def train(self, train_loader, test_loader):
+    def train_custom(self, train_loader, test_loader):
 
         for epoch in range(self.config.hyper.epochs):
             
