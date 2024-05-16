@@ -75,15 +75,18 @@ def get_probabilities_dataset(data_loader, model):
         for images, labels in data_loader:
             images, labels = images.to(model.device), labels.to(model.device)
             batch_probabilities = get_probabilities(images, model)
+            batch_probabilities = batch_probabilities.mean(dim=0) #take the mean over the ensemble
             if probabilities is None:
                 probabilities = batch_probabilities
                 # label_list = labels
                 label_list = labels.cpu()
             else:
-                probabilities = torch.cat((probabilities, batch_probabilities), dim=1)
+                # probabilities = torch.cat((probabilities, batch_probabilities), dim=1) #when not taking the mean
+                probabilities = torch.cat((probabilities, batch_probabilities), dim=0)
                 label_list = torch.cat((label_list, labels.cpu()), dim=0)
 
-    return probabilities, label_list
+    # return probabilities, label_list
+    return probabilities.numpy(), label_list.numpy()
 
 
 
