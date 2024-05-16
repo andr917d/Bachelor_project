@@ -223,11 +223,6 @@ def calculate_ECE(y_true, y_prob, n_bins=10):
     # Calculate the width of each bin
     bin_width = 1.0 / n_bins
 
-    print(f'accuracy_list: {accuracy_list}')
-    print(f'confidence_list: {confidence_list}')
-    print(f'bin_indices_list: {bin_indices_list}')
-
-
     # Calculate the Expected Calibration Error
     # ECE = sum([abs(a - c) * len([1 for a, c in zip(accuracy_list, confidence_list) if a != 0]) / len(accuracy_list) for a, c in zip(accuracy_list, confidence_list)])
 
