@@ -8,13 +8,15 @@ import numpy as np
 
 def get_probabilities(input_images, model):
 
+    samples = 50
+
     #check name of model¨
     if model.config.model.name == "CNN_simple":
         outputs = model(input_images.to(model.device)).unsqueeze(0)
 
     elif model.config.model.name == "ConvolutionalBNN":
         outputs = []
-        for i in range(5):
+        for i in range(samples):
             model.sample()
             output = model(input_images.to(model.device))
             outputs.append(output)
@@ -26,7 +28,7 @@ def get_probabilities(input_images, model):
 
     elif model.config.model.name == "Simple_rank1_CNN":
         outputs = []
-        for i in range(5):
+        for i in range(samples):
             model.sample()
             output = model(input_images.to(model.device))
             outputs.append(output)
