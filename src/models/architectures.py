@@ -1409,15 +1409,27 @@ class ConvolutionalBNN(torch.nn.Module):
 
             #logging
             print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss}\ Negative log Likelihood: {log_likelihood}\tLogp: {logp_values}\tLogq: {logq_values}\tAccuracy: {accuracy}')
-            wandb.log({"training_loss": train_loss, "val_loss": val_loss, "neg_log_likelihood": log_likelihood, "logp": logp_values, "logq": logq_values, "val_accuracy": accuracy})
-
-
-                
+            wandb.log({"training_loss": train_loss, "val_loss": val_loss, "neg_log_likelihood": log_likelihood, "logp": logp_values, "logq": logq_values, "val_accuracy": accuracy}) 
 
              
             # scheduler step
             self.scheduler.step()
         
+        #calculate neg_log_likelihood on val set
+        with torch.no_grad():
+            val_loss = 0.0
+            for val_data, val_target in test_loader:
+                val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                val_output = self(val_data)
+                neg_log_likelihood = self.neg_log_likelihood_categorical(val_output, val_target)
+                val_loss += neg_log_likelihood.item()
+
+            
+            #take the average 
+            val_loss = val_loss / len(test_loader.dataset)
+
+        print(f'Negative log likelihood on validation set: {val_loss}')
+
         print('Finished Training')
     
     def save_model(self, directory='models', filename='CNN_BNN.pt'):

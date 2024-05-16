@@ -49,7 +49,7 @@ def load_cifar10_OOD_pytorch():
     # Define the transformations to apply to the images
     transform = transforms.Compose([
         transforms.ToTensor(),
-        GaussianNoiseTransform(0., 0.1)])  # Apply Gaussian noise with mean 0 and standard deviation 0.1
+        GaussianNoiseTransform(0., 0.2)])  # Apply Gaussian noise with mean 0 and standard deviation 0.1
     
     # Load the CIFAR-10 dataset
     OOD_dataset = CIFAR10(root='./data', train=False, download=True, transform=transform)
