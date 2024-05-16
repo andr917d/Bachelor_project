@@ -330,21 +330,21 @@ def plot_uncertainty_histograms(test_loader, test_loader_OOD, model):
 
     alpha = 0.6
 
-    axs[0].hist(entropies, bins=bin_edges, alpha=alpha, label='entropies')
-    axs[0].hist(entropies_OOD, bins=bin_edges, alpha=alpha, label='entropies OOD')
+    axs[0].hist(entropies, bins=bin_edges, alpha=alpha, label='Validation Data')
+    axs[0].hist(entropies_OOD, bins=bin_edges, alpha=alpha, label='OOD Data')
     axs[0].set_title('Predictive Entropies')
     axs[0].set_xlabel('Value')
     axs[0].set_ylabel('Frequency')
     axs[0].legend()
 
-    axs[1].hist(aleatoric_uncertainties, bins=bin_edges, alpha=alpha, label='aleatoric uncertainties')
-    axs[1].hist(aleatoric_uncertainties_OOD, bins=bin_edges, alpha=alpha, label='aleatoric uncertainties OOD')
+    axs[1].hist(aleatoric_uncertainties, bins=bin_edges, alpha=alpha, label='Validation Data')
+    axs[1].hist(aleatoric_uncertainties_OOD, bins=bin_edges, alpha=alpha, label='OOD Data')
     axs[1].set_title('Aleatoric Uncertainties')
     axs[1].set_xlabel('Value')
     axs[1].legend()
 
-    axs[2].hist(epistemic_uncertainties, bins=bin_edges, alpha=alpha, label='epistemic uncertainties')
-    axs[2].hist(epistemic_uncertainties_OOD, bins=bin_edges, alpha=alpha, label='epistemic uncertainties OOD')
+    axs[2].hist(epistemic_uncertainties, bins=bin_edges, alpha=alpha, label='Validation Data')
+    axs[2].hist(epistemic_uncertainties_OOD, bins=bin_edges, alpha=alpha, label='OOD Data')
     axs[2].set_title('Epistemic Uncertainties')
     axs[2].set_xlabel('Value')
     axs[2].legend()
