@@ -16,7 +16,7 @@ def get_probabilities(input_images, model):
         outputs = []
         for i in range(5):
             model.sample()
-            output = model(input_images)
+            output = model(input_images.to(model.device))
             outputs.append(output)
         
         outputs = torch.stack(outputs, dim=0)
@@ -28,7 +28,7 @@ def get_probabilities(input_images, model):
         outputs = []
         for i in range(5):
             model.sample()
-            output = model(input_images)
+            output = model(input_images.to(model.device))
             outputs.append(output)
         
         outputs = torch.cat(outputs, dim=0)
