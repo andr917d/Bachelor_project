@@ -152,6 +152,9 @@ def main(config):
     ECE = calculate_ECE(labels, probabilities, n_bins)
     print(f"ECE: {ECE}")
 
+    #log ECE to wandb
+    wandb.log({"ECE": ECE})
+
 
     #OOD detection
     plot_uncertainty_histograms(test_loader, test_loader_OOD, model)

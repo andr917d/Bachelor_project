@@ -1428,6 +1428,9 @@ class ConvolutionalBNN(torch.nn.Module):
             #take the average 
             val_loss = val_loss / len(test_loader.dataset)
 
+        #log to wandb
+        wandb.log({"val_neg_log_likelihood": val_loss})
+
         print(f'Negative log likelihood on validation set: {val_loss}')
 
         print('Finished Training')
