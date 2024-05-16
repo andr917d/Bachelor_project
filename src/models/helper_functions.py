@@ -195,40 +195,71 @@ def plot_calibration_curve(y_true, y_prob, n_bins=10, name='calibration curve'):
 
 
 def calculate_entropy_distribution(test_loader, model):
-    entropies = None
-    for i, (images, _) in enumerate(test_loader):
-        probabilities = get_probabilities(images, model)
-        entropy = calculate_predictive_entropy(probabilities)
-        if entropies is None:
-            entropies = entropy
-        else:
-            entropies = torch.cat((entropies, entropy), dim=0)
+    entropies = []
+    with torch.no_grad():
+        for i, (images, _) in enumerate(test_loader):
+            probabilities = get_probabilities(images, model)
+            entropy = calculate_predictive_entropy(probabilities)
+            entropies.append(entropy.detach().cpu())
 
-    return entropies.detach().cpu().numpy()
+    return torch.cat(entropies, dim=0).numpy()
 
 def calculate_alerotic_uncertainty_distribution(test_loader, model):
-    uncertainties = None
-    for i, (images, _) in enumerate(test_loader):
-        probabilities = get_probabilities(images, model)
-        uncertainty = calculate_alerotic_uncertainty(probabilities)
-        if uncertainties is None:
-            uncertainties = uncertainty
-        else:
-            uncertainties = torch.cat((uncertainties, uncertainty), dim=0)
+    uncertainties = []
+    with torch.no_grad():
+        for i, (images, _) in enumerate(test_loader):
+            probabilities = get_probabilities(images, model)
+            uncertainty = calculate_alerotic_uncertainty(probabilities)
+            uncertainties.append(uncertainty.detach().cpu())
 
-    return uncertainties.detach().cpu().numpy()
+    return torch.cat(uncertainties, dim=0).numpy()
 
 def calculate_mutual_information_distribution(test_loader, model):
-    mutual_informations = None
-    for i, (images, _) in enumerate(test_loader):
-        probabilities = get_probabilities(images, model)
-        mutual_information = calculate_mutual_information(probabilities)
-        if mutual_informations is None:
-            mutual_informations = mutual_information
-        else:
-            mutual_informations = torch.cat((mutual_informations, mutual_information), dim=0)
+    mutual_informations = []
+    with torch.no_grad():
+        for i, (images, _) in enumerate(test_loader):
+            probabilities = get_probabilities(images, model)
+            mutual_information = calculate_mutual_information(probabilities)
+            mutual_informations.append(mutual_information.detach().cpu())
 
-    return mutual_informations.detach().cpu().numpy()
+    return torch.cat(mutual_informations, dim=0).numpy()
+
+
+# def calculate_entropy_distribution(test_loader, model):
+#     entropies = None
+#     for i, (images, _) in enumerate(test_loader):
+#         probabilities = get_probabilities(images, model)
+#         entropy = calculate_predictive_entropy(probabilities)
+#         if entropies is None:
+#             entropies = entropy
+#         else:
+#             entropies = torch.cat((entropies, entropy), dim=0)
+
+#     return entropies.detach().cpu().numpy()
+
+# def calculate_alerotic_uncertainty_distribution(test_loader, model):
+#     uncertainties = None
+#     for i, (images, _) in enumerate(test_loader):
+#         probabilities = get_probabilities(images, model)
+#         uncertainty = calculate_alerotic_uncertainty(probabilities)
+#         if uncertainties is None:
+#             uncertainties = uncertainty
+#         else:
+#             uncertainties = torch.cat((uncertainties, uncertainty), dim=0)
+
+#     return uncertainties.detach().cpu().numpy()
+
+# def calculate_mutual_information_distribution(test_loader, model):
+#     mutual_informations = None
+#     for i, (images, _) in enumerate(test_loader):
+#         probabilities = get_probabilities(images, model)
+#         mutual_information = calculate_mutual_information(probabilities)
+#         if mutual_informations is None:
+#             mutual_informations = mutual_information
+#         else:
+#             mutual_informations = torch.cat((mutual_informations, mutual_information), dim=0)
+
+#     return mutual_informations.detach().cpu().numpy()
 
 
 
