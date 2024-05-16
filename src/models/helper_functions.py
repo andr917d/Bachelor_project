@@ -71,16 +71,17 @@ def get_probabilities(input_images, model):
 def get_probabilities_dataset(data_loader, model):
     probabilities = None
     label_list = None
-    for images, labels in data_loader:
-        images, labels = images.to(model.device), labels.to(model.device)
-        batch_probabilities = get_probabilities(images, model)
-        if probabilities is None:
-            probabilities = batch_probabilities
-            # label_list = labels
-            label_list = labels.cpu()
-        else:
-            probabilities = torch.cat((probabilities, batch_probabilities), dim=1)
-            label_list = torch.cat((label_list, labels.cpu()), dim=0)
+    with torch.no_grad():
+        for images, labels in data_loader:
+            images, labels = images.to(model.device), labels.to(model.device)
+            batch_probabilities = get_probabilities(images, model)
+            if probabilities is None:
+                probabilities = batch_probabilities
+                # label_list = labels
+                label_list = labels.cpu()
+            else:
+                probabilities = torch.cat((probabilities, batch_probabilities), dim=1)
+                label_list = torch.cat((label_list, labels.cpu()), dim=0)
 
     return probabilities, label_list
 
