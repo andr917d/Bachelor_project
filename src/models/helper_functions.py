@@ -194,6 +194,47 @@ def plot_calibration_curve(y_true, y_prob, n_bins=10, name='calibration curve'):
     plt.savefig('calibration_curve.png')
     # plt.show()
 
+def calculate_ECE(y_true, y_prob, n_bins=10):
+    # Initialize lists to store accuracy and confidence for each bin
+    accuracy_list = []
+    confidence_list = []
+    bin_indices_list = []
+
+    # Calculate accuracy and confidence for each bin
+    for m in range(1, n_bins + 1):
+        # Define the bin range
+        bin_lower = (m - 1) / n_bins
+        bin_upper = m / n_bins
+        # Get indices of samples whose predicted confidence falls into the current bin
+        bin_indices = [i for i, p in enumerate(y_prob) if bin_lower < max(p) <= bin_upper]
+        
+        # Calculate accuracy and confidence for the current bin
+        if bin_indices:
+            bin_accuracy = sum([1 for i in bin_indices if y_true[i] == y_prob[i].argmax()]) / len(bin_indices)
+            bin_confidence = sum([max(p) for i, p in enumerate(y_prob) if i in bin_indices]) / len(bin_indices)
+        else:
+            bin_accuracy = 0
+            bin_confidence = 0
+
+        accuracy_list.append(bin_accuracy)
+        confidence_list.append(bin_confidence)
+        bin_indices_list.append(bin_indices)
+
+    # Calculate the width of each bin
+    bin_width = 1.0 / n_bins
+
+    print(f'accuracy_list: {accuracy_list}')
+    print(f'confidence_list: {confidence_list}')
+    print(f'bin_indices_list: {bin_indices_list}')
+
+
+    # Calculate the Expected Calibration Error
+    # ECE = sum([abs(a - c) * len([1 for a, c in zip(accuracy_list, confidence_list) if a != 0]) / len(accuracy_list) for a, c in zip(accuracy_list, confidence_list)])
+
+    ECE = sum([abs(a - c) * len(bin_indices) for a, c, bin_indices in zip(accuracy_list, confidence_list, bin_indices_list)]) / len(y_prob)
+
+    return ECE
+
 
 
 

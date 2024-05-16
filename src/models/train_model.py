@@ -149,6 +149,10 @@ def main(config):
     n_bins = 10
     plot_calibration_curve(labels, probabilities, n_bins, name=config.bsub.name)
 
+    ECE = calculate_ECE(labels, probabilities, n_bins)
+    print(f"ECE: {ECE}")
+
+
     #OOD detection
     plot_uncertainty_histograms(test_loader, test_loader_OOD, model)
 
