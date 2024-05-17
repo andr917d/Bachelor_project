@@ -1548,7 +1548,7 @@ class BatchEnsemble_CNN(torch.nn.Module):
         final_out_channels, final_image_size = self.calculate_final_layer_details(self.conv_layers)
         self.linear = torch.nn.Linear(final_out_channels * final_image_size * final_image_size, 32)
         self.fc = torch.nn.Linear(32, config.model.num_classes)
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr, weight_decay=config.hyper.weight_decay)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
         self.to(self.device)
 

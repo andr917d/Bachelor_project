@@ -7,6 +7,7 @@ hyper:
   log_interval: 10
   sigma_prior: 10
   mu_prior: 0
+  weight_decay: 0.0001
 model:
   # name: "ConvolutionalBNN"
   # name: "BNN"
