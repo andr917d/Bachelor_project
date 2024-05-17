@@ -1421,23 +1421,23 @@ class ConvolutionalBNN(torch.nn.Module):
             # scheduler step
             self.scheduler.step()
         
-        #calculate neg_log_likelihood on val set
-        with torch.no_grad():
-            val_loss = 0.0
-            for val_data, val_target in test_loader:
-                val_data, val_target = val_data.to(self.device), val_target.to(self.device)
-                val_output = self(val_data)
-                neg_log_likelihood = self.neg_log_likelihood_categorical(val_output, val_target)
-                val_loss += neg_log_likelihood.item()
+        # #calculate neg_log_likelihood on val set
+        # with torch.no_grad():
+        #     val_loss = 0.0
+        #     for val_data, val_target in test_loader:
+        #         val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+        #         val_output = self(val_data)
+        #         neg_log_likelihood = self.neg_log_likelihood_categorical(val_output, val_target)
+        #         val_loss += neg_log_likelihood.item()
 
             
-            #take the average 
-            val_loss = val_loss / len(test_loader.dataset)
+        #     #take the average 
+        #     val_loss = val_loss / len(test_loader.dataset)
 
-        #log to wandb
-        # wandb.log({"val_neg_log_likelihood": val_loss})
+        # #log to wandb
+        # # wandb.log({"val_neg_log_likelihood": val_loss})
 
-        print(f'Negative log likelihood on validation set: {val_loss}')
+        # print(f'Negative log likelihood on validation set: {val_loss}')
 
         print('Finished Training')
     

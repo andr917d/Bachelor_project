@@ -149,11 +149,20 @@ def main(config):
     n_bins = 10
     plot_calibration_curve(labels, probabilities, n_bins, name=config.bsub.name)
 
+    #calculate accuracy
+    accuracy = calculate_accuracy(labels, probabilities)
+    print(f"Accuracy: {accuracy}")
+
+    #calculate negative log likelihood
+    NLL = calculate_cross_entropy(labels, probabilities)
+    print(f"NLL: {NLL}")
+
+    # calculate ECE
     ECE = calculate_ECE(labels, probabilities, n_bins)
     print(f"ECE: {ECE}")
 
-    #log ECE to wandb
-    wandb.log({"ECE": ECE})
+    #log to wandb
+    wandb.log({"accuracy": accuracy, "NLL": NLL, "ECE": ECE})
 
 
     #OOD detection

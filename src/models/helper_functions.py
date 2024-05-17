@@ -90,6 +90,17 @@ def get_probabilities_dataset(data_loader, model):
     # return probabilities, label_list
     return probabilities.numpy(), label_list.numpy()
 
+def calculate_cross_entropy(probabilities, labels):
+    nll = torch.nn.functional.cross_entropy(torch.tensor(probabilities), torch.tensor(labels), reduction='mean')
+
+    return nll
+
+def calculate_accuracy(probabilities, labels):
+    predictions = np.argmax(probabilities, axis=1)
+    accuracy = np.mean(predictions == labels)
+    return accuracy
+
+
 
 
 def calculate_entropy(probabilities): 
