@@ -11,8 +11,8 @@ hyper:
 model:
   # name: "ConvolutionalBNN"
   # name: "BNN"
-  name: "BatchEnsemble_CNN"
-  # name: "Simple_rank1_CNN"
+  # name: "BatchEnsemble_CNN"
+  name: "Simple_rank1_CNN"
   # name: "CNN_simple"
   image_size: 32
   ensemble_size: 10
@@ -25,11 +25,11 @@ model:
                                                   #  (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False)]
 
 # For ConvolutionalBNN layer: [in_channels, out_channels, kernel_size, stride, padding, pooling]
-  # conv_layers: [[3, 64, 3, 1, 1, True], [64, 128, 3, 1, 1, True], [128, 256, 3, 1, 1, True]]
+  conv_layers: [[3, 64, 3, 1, 1, True], [64, 128, 3, 1, 1, True], [128, 256, 3, 1, 1, True]]
                 # [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False]]
 
   #BatchEnsemble
-  conv_layers: [[3, 64, 3, 10, 1, 1], [64, 128, 3, 10, 1, 1], [128, 256, 3, 10, 1, 1]]
+  # conv_layers: [[3, 64, 3, 10, 1, 1], [64, 128, 3, 10, 1, 1], [128, 256, 3, 10, 1, 1]]
 
   #Rank 1
   # conv_layers: [[3, 64, 3, 10, 1, 1, True], [64, 128, 3, 10, 1, 1, True], [128, 256, 3, 10, 1, 1, True]]
@@ -52,8 +52,8 @@ wandb:
 bsub:
   queue: "gpua100"
   # name: "ConvolutionalBNN"
-  name: "BatchEnsemble_CNN"
-  # name: "Rank1_CNN"
+  # name: "BatchEnsemble_CNN"
+  name: "Rank1_CNN"
   gpu_num: 1
   cpu_num: 4
   cpu_mem: 4

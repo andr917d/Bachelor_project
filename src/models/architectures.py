@@ -1891,6 +1891,7 @@ class Simple_rank1_CNN(torch.nn.Module):
         
             val_loss = 0.0
             accuracy = 0.0
+            neg_log_likelihood_val = 0.0
             with torch.no_grad():
                 for batch_idx, (val_data, val_target) in enumerate(test_loader):
                     val_data, val_target = val_data.to(self.device), val_target.to(self.device)
@@ -1903,6 +1904,7 @@ class Simple_rank1_CNN(torch.nn.Module):
 
                     loss = val_negative_log_likelihood + val_kl_divergence_u + val_kl_divergence_v - val_log_prob_w
                     val_loss += loss.item()
+                    neg_log_likelihood_val += val_negative_log_likelihood.item()
 
                 
                     #accuracy
@@ -1912,9 +1914,11 @@ class Simple_rank1_CNN(torch.nn.Module):
 
              # also divide by ensemble size
             accuracy = accuracy / (len(test_loader) * self.ensemble_size)  
+            neg_log_likelihood_val = neg_log_likelihood_val / len(test_loader.dataset)
+
             #logging
             print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss} \tValidation Accuracy: {accuracy}')
-            wandb.log({"training_loss": train_loss, "neg_log_likelihood": log_likelihood, "kl_divergence_u": kl_u, "kl_divergence_v": kl_v, "log_prob_w": log_p_w, "val_loss": val_loss, "val_accuracy": accuracy})
+            wandb.log({"training_loss": train_loss, "neg_log_likelihood": log_likelihood, "neg_log_likelihood_val": neg_log_likelihood_val, "kl_divergence_u": kl_u, "kl_divergence_v": kl_v, "log_prob_w": log_p_w, "val_loss": val_loss, "val_accuracy": accuracy})
                 
     
                     
