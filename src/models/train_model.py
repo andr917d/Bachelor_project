@@ -100,6 +100,8 @@ def init_model(model_name, config):
         return ConvolutionalBNN(config)
     elif model_name == "CNN_simple":
         return CNN_simple(config)
+    elif model_name == "CNN_MCD":
+        return CNN_simple(config)
     else:
         raise ValueError(f"Unknown model name: {model_name}")
 
