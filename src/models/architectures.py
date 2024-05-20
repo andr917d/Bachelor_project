@@ -1059,8 +1059,8 @@ class CNN_simple(torch.nn.Module):
                 for batch_idx, (val_data, val_target) in enumerate(test_loader):
                     val_data, val_target = val_data.to(self.device), val_target.to(self.device)
                     val_output = self(val_data)
-                    val_loss = torch.nn.functional.cross_entropy(val_output, val_target, reduction='mean')
-                    val_loss += val_loss.item()
+                    loss = torch.nn.functional.cross_entropy(val_output, val_target, reduction='mean')
+                    val_loss += loss.item()
 
                     #calculate accuracy
                     _, predicted = torch.max(val_output, 1)

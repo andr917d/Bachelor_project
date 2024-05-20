@@ -144,6 +144,13 @@ def main(config):
     #calibration curve
     probabilities, labels = get_probabilities_dataset(test_loader, model)
 
+    #calculate negative log likelihood
+    NLL = calculate_cross_entropy(labels, probabilities)
+    print(f"NLL: {NLL}")
+
+    #take softmax over the probabilities to get the probabilities
+    probabilities = torch.nn.functional.softmax(probabilities, dim=-1)
+
     # probabilities = probabilities.mean(dim=0).cpu().detach().numpy() #average over the forward passes (ensemble members)
     # labels = labels.cpu().detach().numpy()
     n_bins = 10
@@ -153,9 +160,7 @@ def main(config):
     accuracy = calculate_accuracy(labels, probabilities)
     print(f"Accuracy: {accuracy}")
 
-    #calculate negative log likelihood
-    NLL = calculate_cross_entropy(labels, probabilities)
-    print(f"NLL: {NLL}")
+    
 
     # calculate ECE
     ECE = calculate_ECE(labels, probabilities, n_bins)

@@ -52,7 +52,8 @@ def get_probabilities(input_images, model):
         outputs = torch.cat(outputs, dim=0)
 
     #get the probabilities
-    probabilities = torch.nn.functional.softmax(outputs, dim=-1)
+    # probabilities = torch.nn.functional.softmax(outputs, dim=-1)
+    probabilities = outputs
     # return probabilities
     return probabilities.cpu()
 
