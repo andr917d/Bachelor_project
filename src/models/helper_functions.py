@@ -105,7 +105,8 @@ def get_probabilities_dataset(data_loader, model):
                 label_list = torch.cat((label_list, labels.cpu()), dim=0)
 
     # return probabilities, label_list
-    return probabilities.numpy(), label_list.numpy()
+    # return probabilities.numpy(), label_list.numpy()
+    return probabilities, label_list
 
 def calculate_cross_entropy(labels, probabilities):
     nll = torch.nn.functional.cross_entropy(torch.tensor(probabilities), torch.tensor(labels), reduction='mean')

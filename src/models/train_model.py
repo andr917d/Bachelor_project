@@ -150,6 +150,9 @@ def main(config):
 
     #take softmax over the probabilities to get the probabilities
     probabilities = torch.nn.functional.softmax(probabilities, dim=-1)
+    probabilities = probabilities.numpy()
+    labels = labels.numpy()
+
 
     # probabilities = probabilities.mean(dim=0).cpu().detach().numpy() #average over the forward passes (ensemble members)
     # labels = labels.cpu().detach().numpy()
