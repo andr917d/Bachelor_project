@@ -1138,6 +1138,7 @@ class CNN_DeepEnsemble(torch.nn.Module):
             for model, optimizer in zip(self.models, self.optimizers):
                 train_loss = 0.0
                 for batch, (x, y) in enumerate(train_loader):
+                    x, y = x.to(self.device), y.to(self.device)
                     optimizer.zero_grad()
                     # loss = self.criterion(model(x), y)
                     loss = torch.nn.functional.cross_entropy(model(x), y, reduction='sum')
@@ -1187,7 +1188,7 @@ class CNN_DeepEnsemble(torch.nn.Module):
             for scheduler in self.schedulers:
                 scheduler.step()
 
-        return losses
+        print('Finished Training')
     
     def save_model(self, directory='models'):
         directory = os.path.join(os.getcwd(), directory)
