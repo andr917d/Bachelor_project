@@ -1133,9 +1133,10 @@ class CNN_DeepEnsemble(torch.nn.Module):
 
         for epoch in range(self.config.hyper.epochs):
             losses = [[] for _ in range(self.num_models)]
-            train_loss = 0.0
+            
 
             for model, optimizer in zip(self.models, self.optimizers):
+                train_loss = 0.0
                 for batch, (x, y) in enumerate(train_loader):
                     optimizer.zero_grad()
                     # loss = self.criterion(model(x), y)
@@ -1150,6 +1151,7 @@ class CNN_DeepEnsemble(torch.nn.Module):
                 train_loss = train_loss / len(train_loader.dataset)
 
                 losses[self.models.index(model)] = train_loss
+            
 
             #validation loss
             val_loss = 0.0
@@ -1174,10 +1176,11 @@ class CNN_DeepEnsemble(torch.nn.Module):
                     accuracies[self.models.index(model)] = accuracy
 
             val_loss = val_loss / len(test_loader)
+            val_loss = val_loss / len(self.num_models)
 
             print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss}\tValidation Accuracy: {accuracies}')
 
-            wandb.log({"training_loss": train_loss, "val_loss": val_loss, "val_accuracy": accuracies})
+            wandb.log({"training_loss": losses, "val_loss": val_loss, "val_accuracy": accuracies})
 
             
             #scheduler step

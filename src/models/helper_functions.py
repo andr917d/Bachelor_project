@@ -269,6 +269,8 @@ def calculate_entropy_distribution(test_loader, model):
     with torch.no_grad():
         for i, (images, _) in enumerate(test_loader):
             probabilities = get_probabilities(images, model)
+            #softmax the probabilities
+            probabilities = torch.nn.functional.softmax(probabilities, dim=-1)
             entropy = calculate_predictive_entropy(probabilities)
             entropies.append(entropy.detach().cpu())
 
@@ -279,6 +281,8 @@ def calculate_alerotic_uncertainty_distribution(test_loader, model):
     with torch.no_grad():
         for i, (images, _) in enumerate(test_loader):
             probabilities = get_probabilities(images, model)
+            #softmax the probabilities
+            probabilities = torch.nn.functional.softmax(probabilities, dim=-1)
             uncertainty = calculate_alerotic_uncertainty(probabilities)
             uncertainties.append(uncertainty.detach().cpu())
 
@@ -289,6 +293,8 @@ def calculate_mutual_information_distribution(test_loader, model):
     with torch.no_grad():
         for i, (images, _) in enumerate(test_loader):
             probabilities = get_probabilities(images, model)
+            #softmax the probabilities
+            probabilities = torch.nn.functional.softmax(probabilities, dim=-1)
             mutual_information = calculate_mutual_information(probabilities)
             mutual_informations.append(mutual_information.detach().cpu())
 
