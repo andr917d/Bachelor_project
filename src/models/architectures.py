@@ -1032,12 +1032,12 @@ class CNN_simple(torch.nn.Module):
                 self.optimizer.zero_grad()
                 output = self(data) 
                 
-                loss = torch.nn.functional.cross_entropy(output, target, reduction='sum')
+                loss = torch.nn.functional.cross_entropy(output, target, reduction='mean')
                 
                 loss.backward()
                 self.optimizer.step()
         
-                train_loss += loss.item() * len(target)
+                train_loss += loss.item()
 
                 # #accuracy
                 # _, predicted = torch.max(output, 1)
@@ -1059,8 +1059,8 @@ class CNN_simple(torch.nn.Module):
                 for batch_idx, (val_data, val_target) in enumerate(test_loader):
                     val_data, val_target = val_data.to(self.device), val_target.to(self.device)
                     val_output = self(val_data)
-                    val_loss = torch.nn.functional.cross_entropy(val_output, val_target, reduction='sum')
-                    val_loss += val_loss.item() * len(val_data)
+                    val_loss = torch.nn.functional.cross_entropy(val_output, val_target, reduction='mean')
+                    val_loss += val_loss.item()
 
                     #calculate accuracy
                     _, predicted = torch.max(val_output, 1)
@@ -1076,8 +1076,8 @@ class CNN_simple(torch.nn.Module):
                 
             
 
-            avg_train_loss = train_loss / len(train_loader.dataset)
-            avg_val_loss = val_loss / len(test_loader.dataset)
+            avg_train_loss = train_loss / len(train_loader)
+            avg_val_loss = val_loss / len(test_loader)
             print(f'Epoch: {epoch+1}\tTrain Loss: {avg_train_loss}\tValidation Loss: {avg_val_loss}')
             print(f'Validation accuracy: {accuracy}')
             # Logging

@@ -23,7 +23,7 @@ model:
   input_size: 54
   output_size: 7
   hidden_sizes: [64, 128, 256]
-  conv_layers: [[3, 64, 3, 1, 1, 0.5, True], [64, 128, 3, 1, 1, 0.5, True], [128, 256, 3, 1, 1, 0.5, True]] 
+  conv_layers: [[3, 64, 3, 1, 1, 0.0, True], [64, 128, 3, 1, 1, 0.0, True], [128, 256, 3, 1, 1, 0.0, True]] 
                                                   #  (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False)]
 
 # For ConvolutionalBNN layer: [in_channels, out_channels, kernel_size, stride, padding, pooling]
