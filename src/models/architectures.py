@@ -1175,6 +1175,10 @@ class CNN_DeepEnsemble(torch.nn.Module):
                     accuracy = accuracy / len(test_loader)
 
                     accuracies[self.models.index(model)] = accuracy
+            
+            #take mean
+            accuracies = sum(accuracies) / len(accuracies)
+            losses = sum(losses) / len(losses)
 
             val_loss = val_loss / len(test_loader)
             val_loss = val_loss / len(self.num_models)
