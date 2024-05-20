@@ -1127,7 +1127,7 @@ class CNN_DeepEnsemble(torch.nn.Module):
 
     
     # def train(self, train_loader, num_epochs, log_interval=1):
-    def custom_train(self, train_loader, test_loader):
+    def train_custom(self, train_loader, test_loader):
 
         # losses = [[] for _ in range(self.num_models)]
 
