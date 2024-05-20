@@ -1181,7 +1181,7 @@ class CNN_DeepEnsemble(torch.nn.Module):
             losses = sum(losses) / len(losses)
 
             val_loss = val_loss / len(test_loader)
-            val_loss = val_loss / len(self.num_models)
+            val_loss = val_loss / self.num_models
 
             print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss}\tValidation Accuracy: {accuracies}')
 
