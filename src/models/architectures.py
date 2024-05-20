@@ -979,7 +979,7 @@ class CNN_simple(torch.nn.Module):
         self.final_out_channels, self.final_image_size = self.calculate_final_layer_details(self.conv_layers)
         self.linear = torch.nn.Linear(self.final_out_channels * self.final_image_size * self.final_image_size, 1024)
         self.fc = torch.nn.Linear(1024, config.model.num_classes)
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr, weight_decay=config.hyper.weight_decay)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
         self.to(self.device)
 
@@ -1109,33 +1109,77 @@ class CNN_simple(torch.nn.Module):
     
     
 #Deep ensemble CNN
-class CNN_DeepEnsemble:
-    def __init__(self, num_models, conv_layers, num_classes=10, image_size=28):
-        self.models = [CNN_simple(conv_layers, num_classes, image_size) for _ in range(num_models)]
-        self.optimizers = [torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001) for model in self.models]
-        self.schedulers = [torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1) for optimizer in self.optimizers]
-        self.criterion = torch.nn.CrossEntropyLoss()
-        self.num_models = num_models
+class CNN_DeepEnsemble(torch.nn.Module):
+    # def __init__(self, num_models, conv_layers, num_classes=10, image_size=28):
+    def __init__(self, config):
+        super(CNN_DeepEnsemble, self).__init__()
+        self.config = config
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.num_models = config.model.num_models
+        self.conv_layers = config.model.conv_layers
+        self.num_classes = config.model.num_classes
+
+        self.models = [CNN_simple(config) for _ in range(self.num_models)]
+        self.optimizers = [torch.optim.Adam(model.parameters(), lr=config.hyper.lr, weight_decay=config.hyper.weight_decay) for model in self.models]
+        self.schedulers = [torch.optim.lr_scheduler.StepLR(optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma) for optimizer in self.optimizers]
+        # self.criterion = torch.nn.CrossEntropyLoss()
+        self.to(self.device)
 
     
-    def train(self, train_loader, num_epochs, log_interval=1):
+    # def train(self, train_loader, num_epochs, log_interval=1):
+    def custom_train(self, train_loader, test_loader):
 
-        losses = [[] for _ in range(self.num_models)]
+        # losses = [[] for _ in range(self.num_models)]
 
-        for epoch in range(num_epochs):
+        for epoch in range(self.config.hyper.epochs):
+            losses = [[] for _ in range(self.num_models)]
+            train_loss = 0.0
+
             for model, optimizer in zip(self.models, self.optimizers):
                 for batch, (x, y) in enumerate(train_loader):
                     optimizer.zero_grad()
-                    loss = self.criterion(model(x), y)
+                    # loss = self.criterion(model(x), y)
+                    loss = torch.nn.functional.cross_entropy(model(x), y, reduction='sum')
                     loss.backward()
                     optimizer.step()
 
-                    losses[self.models.index(model)].append(loss.item())
+                    # losses[self.models.index(model)].append(loss.item())
+                    train_loss += loss.item()
 
                 
-                if batch % log_interval == 0:
-                    print(f'Model: {self.models.index(model)}\tEpoch: {epoch}\tBatch: {batch}\tLoss: {loss.item()}')
+                train_loss = train_loss / len(train_loader.dataset)
 
+                losses[self.models.index(model)] = train_loss
+
+            #validation loss
+            val_loss = 0.0
+            accuracies = [[] for _ in range(self.num_models)]
+            
+            with torch.no_grad():
+                for model in self.models:
+                    accuracy = 0.0
+                    for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                        val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                        val_output = model(val_data)
+                        loss = torch.nn.functional.cross_entropy(val_output, val_target, reduction='mean')
+                        val_loss += loss.item()
+
+                        #accuracy
+                        _, predicted = torch.max(val_output, -1)
+                        correct = (predicted == val_target).sum().item()
+                        accuracy += correct / len(val_target)
+
+                    accuracy = accuracy / len(test_loader)
+
+                    accuracies[self.models.index(model)] = accuracy
+
+            val_loss = val_loss / len(test_loader)
+
+            print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss}\tValidation Accuracy: {accuracies}')
+
+            wandb.log({"training_loss": train_loss, "val_loss": val_loss, "val_accuracy": accuracies})
+
+            
             #scheduler step
             for scheduler in self.schedulers:
                 scheduler.step()

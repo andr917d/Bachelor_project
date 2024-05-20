@@ -7,21 +7,23 @@ hyper:
   log_interval: 10
   sigma_prior: 10
   mu_prior: 0
-  weight_decay: 0.0001
+  weight_decay: 0.001
 model:
   # name: "ConvolutionalBNN"
   # name: "BNN"
   # name: "BatchEnsemble_CNN"
-  name: "Simple_rank1_CNN"
-  # name: "CNN_simple"
+  # name: "Simple_rank1_CNN"
+  name: "CNN_simple"
+  # name: "CNN_DeepEnsemble"
   image_size: 32
   ensemble_size: 10
   #image_size: 28
   num_classes: 10
+  num_models: 10
   input_size: 54
   output_size: 7
   hidden_sizes: [64, 128, 256]
-  # conv_layers: [[3, 64, 3, 1, 1, 0.2, True], [64, 128, 3, 1, 1, 0.2, True], [128, 256, 3, 1, 1, 0.2, True]] 
+  conv_layers: [[3, 64, 3, 1, 1, 0.5, True], [64, 128, 3, 1, 1, 0.5, True], [128, 256, 3, 1, 1, 0.5, True]] 
                                                   #  (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False)]
 
 # For ConvolutionalBNN layer: [in_channels, out_channels, kernel_size, stride, padding, pooling]
@@ -32,7 +34,7 @@ model:
   # conv_layers: [[3, 64, 3, 10, 1, 1], [64, 128, 3, 10, 1, 1], [128, 256, 3, 10, 1, 1]]
 
   #Rank 1
-  conv_layers: [[3, 64, 3, 10, 1, 1, True], [64, 128, 3, 10, 1, 1, True], [128, 256, 3, 10, 1, 1, True]]
+  # conv_layers: [[3, 64, 3, 10, 1, 1, True], [64, 128, 3, 10, 1, 1, True], [128, 256, 3, 10, 1, 1, True]]
   #               [256, 256, 3, 10, 1, 1, False], [256, 256, 3, 10, 1, 1, False], [256, 256, 3, 10, 1, 1, False]]
   #conv_layers: [[1, 64, 3, 9, 1, 1], [64, 128, 3, 9, 1, 1], [128, 256, 3, 9, 1, 1]]
   # conv_layers: [[3, 64, 3, 1, 1], [64, 128, 3, 1, 1], [128, 256, 3, 1, 1]]
@@ -53,7 +55,8 @@ bsub:
   queue: "gpua100"
   # name: "ConvolutionalBNN"
   # name: "BatchEnsemble_CNN"
-  name: "Rank1_CNN"
+  # name: "Rank1_CNN"
+  name: "Simple_CNN"
   gpu_num: 1
   cpu_num: 4
   cpu_mem: 4

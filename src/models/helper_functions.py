@@ -14,6 +14,22 @@ def get_probabilities(input_images, model):
     if model.config.model.name == "CNN_simple":
         outputs = model(input_images.to(model.device)).unsqueeze(0)
 
+    elif model.config.model.name == "CNN_MCD":
+
+        #set model to train mode to turn on dropout
+        model.train()
+        outputs = []
+        for i in range(samples):
+            output = model(input_images.to(model.device))
+            outputs.append(output)
+
+        outputs = torch.stack(outputs, dim=0)
+
+    elif model.config.model.name == "CNN_DeepEnsemble":
+        [ensemble_model.eval() for ensemble_model in model.models]
+        outputs = [ensemble_model(input_images.to(model.device)) for ensemble_model in model.models]
+        outputs = torch.stack(outputs, dim=0)
+
     elif model.config.model.name == "ConvolutionalBNN":
         outputs = []
         for i in range(samples):
