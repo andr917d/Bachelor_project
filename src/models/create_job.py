@@ -21,7 +21,7 @@ def main(config):
                 -n {config.bsub.cpu_num}
                 -R "rusage[mem={config.bsub.cpu_mem}GB]"
                 -R "span[hosts=1]"
-                -W 3:00
+                -W 2:00
                 -B 
                 -N 
                 -o lsf_logs/gpu_%J.out
