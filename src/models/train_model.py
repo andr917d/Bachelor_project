@@ -54,9 +54,9 @@ def download_file(url, file_name):
 
 def load_Unown_MNIST_pytorch():
     # URLs for the test images and labels
-    test_images_url = 'https://github.com/lopeLH/unown-mnist/raw/main/X_test.npy'
+    # test_images_url = 'https://github.com/lopeLH/unown-mnist/raw/main/X_test.npy'
     # Download the test images
-    download_file(test_images_url, 'unown_mnist_test_images.npy')
+    # download_file(test_images_url, 'unown_mnist_test_images.npy')
     # Load the test images
     test_images = np.load('unown_mnist_test_images.npy')
     # Convert the images to PyTorch tensors
