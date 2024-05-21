@@ -2,7 +2,7 @@ import wandb
 import hydra
 from omegaconf import OmegaConf
 import numpy as np
-
+import requests
 import torch
 from torchvision.datasets import CIFAR10, MNIST, CIFAR100
 from torchvision import transforms
@@ -16,6 +16,14 @@ from architectures import Simple_rank1_CNN, BatchEnsemble_CNN, BNN_rank1, BatchE
 #import all helper functions
 from helper_functions import *
 
+class GaussianNoiseTransform:
+    def __init__(self, mean=0., std=1.):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
+ 
 
 def load_cifar10_pytorch():
     train_dataset = CIFAR10(root='./data', train=True, download=True, transform=transforms.ToTensor())
@@ -32,20 +40,47 @@ def load_mnist_pytorch():
     test_dataset = MNIST(root='./data', train=False, download=True, transform=transforms.ToTensor())
     return DataLoader(train_dataset, batch_size=64, shuffle=True), DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
 
-class GaussianNoiseTransform:
-    def __init__(self, mean=0., std=1.):
-        self.mean = mean
-        self.std = std
 
-    def __call__(self, tensor):
-        return tensor + torch.randn(tensor.size()) * self.std + self.mean
- 
+
+# Function to download and save a file given its URL
+def download_file(url, file_name):
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(file_name, 'wb') as f:
+            f.write(response.content)
+    else:
+        print(f"Failed to download {url}")
+
+# Download test images and labels
+download_file(test_images_url, 'unown_mnist_test_images.npy')
+
+def load_Unown_MNIST_pytorch():
+    # URLs for the test images and labels
+    test_images_url = 'https://github.com/lopeLH/unown-mnist/raw/main/X_test.npy'
+    # Download the test images
+    download_file(test_images_url, 'unown_mnist_test_images.npy')
+    # Load the test images
+    test_images = np.load('unown_mnist_test_images.npy')
+    # Convert the images to PyTorch tensors
+    test_images_tensor = torch.tensor(test_images, dtype=torch.float)
+    # Create a DataLoader for the test images
+    test_loader = DataLoader(TensorDataset(test_images_tensor), batch_size=64, shuffle=False)
+    return test_loader
+
+
+def load_mnist_OOD_pytorch():
+    #we could change this to take any transform
+    # Define the transformations to apply to the images
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        GaussianNoiseTransform(0., 0.2)])  # Apply Gaussian noise with mean 0 and standard deviation 0.1
+    
+    # Load the MNIST dataset
+    OOD_dataset = MNIST(root='./data', train=False, download=True, transform=transform)
+    return DataLoader(OOD_dataset, batch_size=64, shuffle=False)
 
 def load_cifar10_OOD_pytorch():
     #we could change this to take any transform
-
-
-
     # Define the transformations to apply to the images
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -132,6 +167,8 @@ def main(config):
         train_loader, test_loader = load_cifar100_pytorch()
     elif dataset_name == "mnist":
         train_loader, test_loader = load_mnist_pytorch()
+        test_loader_OOD = load_Unown_MNIST_pytorch()
+
     elif dataset_name == "forest_cover":
         train_loader, test_loader = load_forest_cover_pytorch()
     else:

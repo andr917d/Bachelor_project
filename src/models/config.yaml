@@ -13,10 +13,10 @@ model:
   # name: "BNN"
   # name: "BatchEnsemble_CNN"
   # name: "Simple_rank1_CNN"
-  # name: "CNN_simple"
+  name: "CNN_simple"
   # name: "CNN_MCD"
-  name: "CNN_DeepEnsemble"
-  image_size: 32
+  # name: "CNN_DeepEnsemble"
+  image_size: 28
   ensemble_size: 10
   #image_size: 28
   num_classes: 10
@@ -24,7 +24,7 @@ model:
   input_size: 54
   output_size: 7
   hidden_sizes: [64, 128, 256]
-  conv_layers: [[3, 64, 3, 1, 1, 0.0, True], [64, 128, 3, 1, 1, 0.0, True], [128, 256, 3, 1, 1, 0.0, True]] 
+  conv_layers: [[1, 64, 3, 1, 1, 0.0, True], [64, 128, 3, 1, 1, 0.0, True], [128, 256, 3, 1, 1, 0.0, True]] 
                                                   #  (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False)]
 
 # For ConvolutionalBNN layer: [in_channels, out_channels, kernel_size, stride, padding, pooling]
@@ -40,8 +40,8 @@ model:
   #conv_layers: [[1, 64, 3, 9, 1, 1], [64, 128, 3, 9, 1, 1], [128, 256, 3, 9, 1, 1]]
   # conv_layers: [[3, 64, 3, 1, 1], [64, 128, 3, 1, 1], [128, 256, 3, 1, 1]]
 data:
-  dataset_name: "cifar10"
-  # dataset_name: "mnist"
+  # dataset_name: "cifar10"
+  dataset_name: "mnist"
   # dataset_name: "forest_cover"
 constants:
   seed: 42
@@ -57,9 +57,9 @@ bsub:
   # name: "ConvolutionalBNN"
   # name: "BatchEnsemble_CNN"
   # name: "Rank1_CNN"
-  # name: "Simple_CNN"
+  name: "Simple_CNN"
   # name: "CNN_MCD"
-  name: "CNN_DeepEnsemble"
+  # name: "CNN_DeepEnsemble"
   gpu_num: 1
   cpu_num: 4
   cpu_mem: 4
