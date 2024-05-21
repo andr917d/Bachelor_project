@@ -51,8 +51,6 @@ def download_file(url, file_name):
     else:
         print(f"Failed to download {url}")
 
-# Download test images and labels
-download_file(test_images_url, 'unown_mnist_test_images.npy')
 
 def load_Unown_MNIST_pytorch():
     # URLs for the test images and labels
