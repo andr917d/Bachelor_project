@@ -161,7 +161,7 @@ def calculate_alerotic_uncertainty(probabilities):
     return entropy_average_predictions
 
 
-def plot_calibration_curve(y_true, y_prob, n_bins=10, name='calibration curve'):
+def plot_calibration_curve(y_true, y_prob, n_bins=10, name='calibration_curve', save_name='test'):
     # Initialize lists to store accuracy and confidence for each bin
     accuracy_list = []
 
@@ -219,10 +219,12 @@ def plot_calibration_curve(y_true, y_prob, n_bins=10, name='calibration curve'):
     plt.yticks(np.arange(0, 1.1, 0.1))
     plt.xlabel('Average confidence')
     plt.ylabel('Accuracy')
+    # plt.title('calibration_curve')
     plt.title(name)
     plt.legend()
     #save the plot
-    plt.savefig('calibration_curve.png')
+    # plt.savefig('calibration_curve.png')
+    plt.savefig(save_name)
     # plt.show()
 
 def calculate_ECE(y_true, y_prob, n_bins=10):
