@@ -16,7 +16,7 @@ model:
   # name: "CNN_simple"
   # name: "CNN_MCD"
   # name: "CNN_DeepEnsemble"
-  image_size: 28
+  image_size: 32
   ensemble_size: 10
   #image_size: 28
   num_classes: 10
