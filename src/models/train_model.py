@@ -61,8 +61,14 @@ def load_Unown_MNIST_pytorch():
     test_images = np.load('unown_mnist_test_images.npy')
     # Convert the images to PyTorch tensors
     test_images_tensor = torch.tensor(test_images, dtype=torch.float)
+    test_images_tensor = test_images_tensor.unsqueeze(1)
+
+    #add taget labels (just some random labels since we are not going to use them)
+    test_labels = np.random.randint(0, 10, test_images_tensor.shape[0])
+
+
     # Create a DataLoader for the test images
-    test_loader = DataLoader(TensorDataset(test_images_tensor), batch_size=64, shuffle=False)
+    test_loader = DataLoader(TensorDataset(test_images_tensor, torch.tensor(test_labels)), batch_size=64, shuffle=False)
     return test_loader
 
 
