@@ -14,8 +14,8 @@ model:
   # name: "BatchEnsemble_CNN"
   # name: "Simple_rank1_CNN"
   # name: "CNN_simple"
-  # name: "CNN_MCD"
-  name: "CNN_DeepEnsemble"
+  name: "CNN_MCD"
+  # name: "CNN_DeepEnsemble"
   image_size: 32
   ensemble_size: 10
   #image_size: 28
@@ -58,8 +58,8 @@ bsub:
   # name: "BatchEnsemble_CNN"
   # name: "Rank1_CNN"
   # name: "Simple_CNN"
-  # name: "CNN_MCD"
-  name: "CNN_DeepEnsemble"
+  name: "CNN_MCD"
+  # name: "CNN_DeepEnsemble"
   gpu_num: 1
   cpu_num: 4
   cpu_mem: 4
