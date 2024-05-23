@@ -202,6 +202,9 @@ def plot_calibration_curve(y_true, y_prob, n_bins=10, name='calibration_curve', 
 
     # Plotting the reliability diagram as a bar plot
 
+    #define figure
+    plt.figure(figsize=(8, 6))
+
     # Plot the positive differences above the bars
     plt.bar(np.array(bar_positions)[positive_indices], differences[positive_indices], bottom=np.array(accuracy_list)[positive_indices]-differences[positive_indices], width=bin_width, align='center', edgecolor="red", facecolor="none", alpha=1.)
     # Plot the negative differences below the bars
