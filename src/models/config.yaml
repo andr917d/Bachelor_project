@@ -9,11 +9,11 @@ hyper:
   mu_prior: 0
   weight_decay: 0.001
 model:
-  name: "ConvolutionalBNN"
+  # name: "ConvolutionalBNN"
   # name: "BNN"
   # name: "BatchEnsemble_CNN"
   # name: "Simple_rank1_CNN"
-  # name: "CNN_simple"
+  name: "CNN_simple"
   # name: "CNN_MCD"
   # name: "CNN_DeepEnsemble"
   image_size: 32
@@ -24,11 +24,11 @@ model:
   input_size: 54
   output_size: 7
   hidden_sizes: [64, 128, 256]
-  # conv_layers: [[1, 64, 3, 1, 1, 0.0, True], [64, 128, 3, 1, 1, 0.0, True], [128, 256, 3, 1, 1, 0.0, True]] 
+  conv_layers: [[1, 64, 3, 1, 1, 0.0, True], [64, 128, 3, 1, 1, 0.0, True], [128, 256, 3, 1, 1, 0.0, True]] 
                                                   #  (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False)]
 
 # For ConvolutionalBNN layer: [in_channels, out_channels, kernel_size, stride, padding, pooling]
-  conv_layers: [[3, 64, 3, 1, 1, True], [64, 128, 3, 1, 1, True], [128, 256, 3, 1, 1, True]]
+  # conv_layers: [[3, 64, 3, 1, 1, True], [64, 128, 3, 1, 1, True], [128, 256, 3, 1, 1, True]]
                 # [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False]]
 
   #BatchEnsemble
@@ -54,10 +54,10 @@ wandb:
   entity: "andr917d"
 bsub:
   queue: "gpua100"
-  name: "ConvolutionalBNN"
+  # name: "ConvolutionalBNN"
   # name: "BatchEnsemble_CNN"
   # name: "Rank1_CNN"
-  # name: "Simple_CNN"
+  name: "Simple_CNN"
   # name: "CNN_MCD"
   # name: "CNN_DeepEnsemble"
   gpu_num: 1
