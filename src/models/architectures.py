@@ -1418,10 +1418,13 @@ class ConvolutionalBNN(torch.nn.Module):
                 self.optimizer.zero_grad()
                 self.sample()
                 output = self(data) 
-                neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)
+                # neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)
+                neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)*len(train_loader.dataset)/len(data)
                 
-                logp = self.logp()*len(data)/len(train_loader.dataset)
-                logq = self.logq()*len(data)/len(train_loader.dataset)
+                # logp = self.logp()*len(data)/len(train_loader.dataset)
+                # logq = self.logq()*len(data)/len(train_loader.dataset)
+                logp = self.logp()
+                logq = self.logq()
                 
 
                 loss = neg_log_likelihood + logq - logp
