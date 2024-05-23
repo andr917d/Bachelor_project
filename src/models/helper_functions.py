@@ -225,7 +225,7 @@ def plot_calibration_curve(y_true, y_prob, n_bins=10, name='calibration_curve', 
     #save the plot
     # plt.savefig('calibration_curve.png')
     plt.savefig(save_name)
-    # plt.show()
+    plt.show()
 
 def calculate_ECE(y_true, y_prob, n_bins=10):
     # Initialize lists to store accuracy and confidence for each bin
