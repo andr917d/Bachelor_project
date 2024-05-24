@@ -13,7 +13,7 @@ model:
   # name: "BNN"
   # name: "BatchEnsemble_CNN"
   # name: "Simple_rank1_CNN"
-  # name: "CNN_simple"
+  name: "CNN_simple"
   # name: "CNN_MCD"
   # name: "CNN_DeepEnsemble"
   image_size: 32
