@@ -206,43 +206,48 @@ def main(config):
     accuracy = calculate_accuracy(labels, probabilities)
     print(f"Accuracy: {accuracy}")
 
-    
 
     # calculate ECE
     ECE = calculate_ECE(labels, probabilities, n_bins)
     print(f"ECE: {ECE}")
 
 
-    #calibration curve for OOD
-    probabilities_OOD, labels_OOD = get_probabilities_dataset(test_loader_OOD, model)
+    
 
-    NLL_OOD = calculate_cross_entropy(labels_OOD, probabilities_OOD)
-    print(f"NLL OOD: {NLL_OOD}")
 
-    #take softmax over the probabilities to get the probabilities
-    probabilities_OOD = torch.nn.functional.softmax(probabilities_OOD, dim=-1)
-    probabilities_OOD = probabilities_OOD.numpy()
-    labels_OOD = labels_OOD.numpy()
+    # #calibration curve for OOD
+    # probabilities_OOD, labels_OOD = get_probabilities_dataset(test_loader_OOD, model)
 
-    plot_calibration_curve(labels_OOD, probabilities_OOD, n_bins, name=config.bsub.name, save_name=f'calibration_curve_OOD_{config.bsub.name}.png')
+    # NLL_OOD = calculate_cross_entropy(labels_OOD, probabilities_OOD)
+    # print(f"NLL OOD: {NLL_OOD}")
 
-    #calculate accuracy
-    accuracy_OOD = calculate_accuracy(labels_OOD, probabilities_OOD)
-    print(f"Accuracy OOD: {accuracy_OOD}")
+    # #take softmax over the probabilities to get the probabilities
+    # probabilities_OOD = torch.nn.functional.softmax(probabilities_OOD, dim=-1)
+    # probabilities_OOD = probabilities_OOD.numpy()
+    # labels_OOD = labels_OOD.numpy()
 
-    # calculate ECE
-    ECE_OOD = calculate_ECE(labels_OOD, probabilities_OOD, n_bins)
-    print(f"ECE OOD: {ECE_OOD}")
+    # plot_calibration_curve(labels_OOD, probabilities_OOD, n_bins, name=config.bsub.name, save_name=f'calibration_curve_OOD_{config.bsub.name}.png')
+
+    # #calculate accuracy
+    # accuracy_OOD = calculate_accuracy(labels_OOD, probabilities_OOD)
+    # print(f"Accuracy OOD: {accuracy_OOD}")
+
+    # # calculate ECE
+    # ECE_OOD = calculate_ECE(labels_OOD, probabilities_OOD, n_bins)
+    # print(f"ECE OOD: {ECE_OOD}")
 
 
 
     #log to wandb
-    # wandb.log({"accuracy": accuracy, "NLL": NLL, "ECE": ECE})
-    wandb.log({"accuracy": accuracy, "NLL": NLL, "ECE": ECE, "accuracy_OOD": accuracy_OOD, "NLL_OOD": NLL_OOD, "ECE_OOD": ECE_OOD})
+    wandb.log({"accuracy": accuracy, "NLL": NLL, "ECE": ECE})
+    # wandb.log({"accuracy": accuracy, "NLL": NLL, "ECE": ECE, "accuracy_OOD": accuracy_OOD, "NLL_OOD": NLL_OOD, "ECE_OOD": ECE_OOD})
 
 
     #OOD detection
     plot_uncertainty_histograms(test_loader, test_loader_OOD, model)
+
+    #plot rotated images
+    plot_rotated_image(test_loader, model, label_number=6)
 
 
 
