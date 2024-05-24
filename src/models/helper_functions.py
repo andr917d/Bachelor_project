@@ -488,7 +488,7 @@ def plot_rotated_image(test_loader, model, label_number):
     fig.legend(bars, ['Predictive', 'Epistemic', 'Aleatoric'], loc='center left', bbox_to_anchor=(1, 0.43))
 
     plt.tight_layout()
-    plt.savefig(f'rotated_image_{label_number}.png')
+    plt.savefig(f'rotated_image_{label_number}.png',bbox_inches='tight')
     plt.show()
 
     # print(probabilities.shape)
