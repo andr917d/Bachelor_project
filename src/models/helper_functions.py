@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
-
+from torchvision import transforms
 
 
 
@@ -391,3 +391,142 @@ def plot_uncertainty_histograms(test_loader, test_loader_OOD, model):
 
     plt.savefig('uncertainty_histograms.png')
     
+
+
+
+
+# Define a function to rotate an image
+
+def rotate_image(image, angle):
+    # Convert the tensor image to a PIL Image
+    pil_image = transforms.ToPILImage()(image)
+
+    # Rotate the PIL Image
+    rotated_image = transforms.functional.rotate(pil_image, angle)
+
+    # Convert the PIL Image back to a tensor
+    tensor_image = transforms.ToTensor()(rotated_image)
+
+    return tensor_image.unsqueeze(0)
+
+
+# Define a function to plot the rotated image and the uncertainties
+
+def plot_rotated_image(test_loader, model, label_number):
+
+    batch, label = next(iter(test_loader))
+    # Load a test image with a given label
+
+
+
+    # Find the first image with the given label
+    for i, l in enumerate(label):
+        if l == label_number:
+            break
+
+
+    image = batch[i]
+
+    #angles that look good
+    angles = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180]
+
+
+    rotated_images = [rotate_image(image, angle) for angle in angles]
+
+    # Get the probabilities for the rotated images
+    probabilities = [torch.nn.functional.softmax(get_probabilities(rotated_image, model).detach(), dim=-1) for rotated_image in rotated_images]
+
+
+
+
+    # Calculate the entropy of the predictions using the probabilities
+    entropies = [calculate_predictive_entropy(probability) for probability in probabilities]
+
+    epistemic_uncertainties = [calculate_mutual_information(probability) for probability in probabilities]
+
+    aleatoric_uncertainties = [calculate_alerotic_uncertainty(probability) for probability in probabilities]
+
+    # Define the width of the bars
+    # Define the width of the bars
+    width = 5
+
+    # Calculate the total space for the bars
+    total_bar_space = 3 * width
+
+    # Calculate the total space for the gaps
+    total_gap_space = 28 - total_bar_space
+
+    # Calculate the size of each gap
+    gap = total_gap_space / 4
+
+    # Calculate the positions of the bars
+    x = gap + width/2 + np.arange(3) * (width + gap)
+
+    # Define the colors for the bars
+    colors = ['blue', 'orange', 'green']
+
+    # Create a grid of subplots with two rows: one for the images and one for the bar plots
+    fig, axes = plt.subplots(2, len(angles), figsize=(14, 4), sharex='col', sharey='row')
+
+    for i, (image, entropy, epistemic_uncertainty, aleatoric_uncertainty, angle) in enumerate(zip(rotated_images, entropies, epistemic_uncertainties, aleatoric_uncertainties, angles)):
+        # Display the image
+        axes[0, i].imshow(image[0, 0], cmap='gray')
+        axes[0, i].set_title(f'Angle: {angle}°')
+        axes[0, i].axis('off')
+
+
+        # Create the bar plot with different colors
+        bars = axes[1, i].bar(x, [entropy.item(), epistemic_uncertainty.item(), aleatoric_uncertainty.item()], width, color=colors)
+
+        # Remove the x-axis ticks
+        axes[1, i].set_xticks([])
+
+        axes[1, 0].set_ylabel('Uncertainty')
+        # axes[1, i].set_xticks(x)
+
+    # Add a legend outside of the plot
+    fig.legend(bars, ['Predictive', 'Epistemic', 'Aleatoric'], loc='center left', bbox_to_anchor=(1, 0.43))
+
+    plt.tight_layout()
+    plt.savefig(f'rotated_image_{label_number}.png')
+    plt.show()
+
+    # print(probabilities.shape)
+    #take mean of the probabilities along their first dimension
+    probabilities = torch.stack(probabilities, dim=0)
+    probabilities = torch.mean(probabilities, dim=1)
+    probabilities = probabilities.squeeze(1) 
+    # Transpose the tensor so that the dimensions represent [class, angle]
+    probabilities_per_class = probabilities.transpose(0, 1)
+
+
+    print(f'probabilities: {probabilities[0]}')
+
+    #plot the probabilities for each class for each angle in one plot where each line represents a class
+    # Create a list of class labels (assuming 10 classes for MNIST)
+    class_labels = [f'Class {i}' for i in range(10)]
+
+
+    plt.figure(figsize=(12, 4))
+
+    # Create a plot for each class
+    for i, class_probabilities in enumerate(probabilities_per_class):
+        plt.plot(angles, class_probabilities, label=class_labels[i])
+
+    # Set x-axis ticks to match the angles
+    plt.xticks(angles)
+
+    wide_space = 2
+
+
+    # Set x-axis limits to minimum and maximum angles
+    plt.xlim(min(angles) - wide_space, max(angles) + wide_space)
+
+    plt.title('Probabilities for each class for different angles')
+    plt.xlabel('Angle')
+    plt.ylabel('Probability')
+    #place legend outside the plot
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.savefig(f'rotated_image_{label_number}_probabilities.png')
+
+    plt.show()
