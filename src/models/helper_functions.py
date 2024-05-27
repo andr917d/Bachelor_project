@@ -3,6 +3,8 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
 from torchvision import transforms
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 
 
@@ -119,6 +121,21 @@ def calculate_accuracy(labels, probabilities):
     return accuracy
 
 
+def plot_confusion_matrix(labels, probabilities, normalize=True, save_name='confusion_matrix.png'):
+    # Get the predictions
+    predictions = np.argmax(probabilities, axis=1)
+
+    # Calculate the confusion matrix
+    confusion = confusion_matrix(labels, predictions, normalize='true' if normalize else None)
+
+    # Create a heatmap
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(confusion, annot=True, cmap='Blues', fmt='.1%' if normalize else 'd')
+    plt.xlabel('Prediction')
+    plt.ylabel('Label')
+    plt.title('Confusion Matrix')
+    plt.savefig(save_name)
+    plt.show()
 
 
 def calculate_entropy(probabilities): 

@@ -7,43 +7,98 @@ import wandb
 
 #Simple feedforward neural network
 class FFNN_simple(torch.nn.Module):
-    def __init__(self, input_size, hidden_sizes, output_size, dropout_prob=0.5):
+    # def __init__(self, input_size, hidden_sizes, output_size, dropout_prob=0.0):
+    def __init__(self, config):
         super(FFNN_simple, self).__init__()
         self.layers = torch.nn.ModuleList()
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.input_size = config.model.input_size
+        self.hidden_sizes = config.model.hidden_sizes
+        self.output_size = config.model.output_size
+        self.dropout_prob = config.hyper.dropout_prob
         
 
-        for i in range(len(hidden_sizes)):
+        for i in range(len(self.hidden_sizes)):
             if i == 0:
-                self.layers.append(torch.nn.Linear(input_size, hidden_sizes[i]))
+                self.layers.append(torch.nn.Linear(self.input_size, self.hidden_sizes[i]))
             else:
-                self.layers.append(torch.nn.Linear(hidden_sizes[i-1], hidden_sizes[i]))
+                self.layers.append(torch.nn.Linear(self.hidden_sizes[i-1], self.hidden_sizes[i]))
             self.layers.append(torch.nn.ReLU())
-            self.layers.append(torch.nn.Dropout(p=dropout_prob))
-        self.layers.append(torch.nn.Linear(hidden_sizes[-1], output_size))
+            self.layers.append(torch.nn.Dropout(p=self.dropout_prob))
+        self.layers.append(torch.nn.Linear(self.hidden_sizes[-1], self.output_size))
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001, weight_decay=0.001)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=30, gamma=0.1)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=config.hyper.lr, weight_decay=config.hyper.weight_decay)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma)
+
+        self.to(self.device)
 
     def forward(self, x):
         for layer in self.layers:
             x = layer(x)
         return x
     
-    def train(self, train_loader, num_epochs, log_interval=30):
-        losses = []
-        for epoch in range(num_epochs):
+    # def train(self, train_loader, num_epochs, log_interval=30):
+    def train_custom(self, train_loader, test_loader):
+        # losses = []
+        # for epoch in range(num_epochs):
+        #     for batch_idx, (data, target) in enumerate(train_loader):
+        #         self.optimizer.zero_grad()
+        #         output = self(data)
+        #         loss = torch.nn.functional.cross_entropy(output, target)
+        #         loss.backward()
+        #         self.optimizer.step()
+        #         if batch_idx % log_interval == 0:
+        #             print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)}'
+        #                 f' ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
+        #         losses.append(loss.item())
+        #     self.scheduler.step()
+        # return losses
+        for epoch in range(self.config.hyper.epochs):
+            train_loss = 0.0
             for batch_idx, (data, target) in enumerate(train_loader):
+                data, target = data.to(self.device), target.to(self.device)
                 self.optimizer.zero_grad()
-                output = self(data)
-                loss = torch.nn.functional.cross_entropy(output, target)
+                output = self(data) 
+                
+                loss = torch.nn.functional.cross_entropy(output, target, reduction='mean')
+                
                 loss.backward()
                 self.optimizer.step()
-                if batch_idx % log_interval == 0:
-                    print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)}'
-                        f' ({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item():.6f}')
-                losses.append(loss.item())
-            self.scheduler.step()
-        return losses
+        
+                train_loss += loss.item()
+                
+            #validation loss
+            val_loss = 0.0
+            accuracy = 0.0
+            with torch.no_grad():
+                for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                    val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                    val_output = self(val_data)
+                    loss = torch.nn.functional.cross_entropy(val_output, val_target, reduction='mean')
+                    val_loss += loss.item()
+
+                    #calculate accuracy
+                    _, predicted = torch.max(val_output, 1)
+                    correct = (predicted == val_target).sum().item()
+                    accuracy_batch = correct / len(val_target)
+                    # print(f'Validation accuracy: {accuracy_batch}')
+                    accuracy += accuracy_batch
+
+            
+            accuracy = accuracy / len(test_loader)
+
+            avg_train_loss = train_loss / len(train_loader)
+            avg_val_loss = val_loss / len(test_loader)
+            print(f'Epoch: {epoch+1}\tTrain Loss: {avg_train_loss}\tValidation Loss: {avg_val_loss}')
+            print(f'Validation accuracy: {accuracy}')
+            # Logging
+            wandb.log({"training_loss": avg_train_loss, "val_loss": avg_val_loss, "val_accuracy": accuracy})
+        
+                
+            self.scheduler.step()  
+        
+        print('Finished Training')
+
     
     def save_model(self, directory='models', filename='FFNN_simple.pt'):
         directory = os.path.join(os.getcwd(), directory)
@@ -62,30 +117,111 @@ class FFNN_simple(torch.nn.Module):
 
     
 class FFNN_DeepEnsemble:
-    def __init__(self, num_models, input_sizes, hidden_sizes, output_size, dropout_prob=0.5):
-        self.models = [FFNN_simple(input_sizes, hidden_sizes, output_size, dropout_prob) for _ in range(num_models)]
-        self.optimizers = [torch.optim.Adam(model.parameters(), lr=0.001, weight_decay = 0.001) for model in self.models]
-        self.scheduler = [torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1) for optimizer in self.optimizers]
-        self.criterion = torch.nn.CrossEntropyLoss()
-        self.num_models = num_models
+    # def __init__(self, num_models, input_sizes, hidden_sizes, output_size, dropout_prob=0.5):
+    def __init__(self, config):
 
-    def train(self, train_loader, num_epochs, log_interval=30):
-        losses = [[] for _ in range(self.num_models)]
-        for epoch in range(num_epochs):
+        super(FFNN_DeepEnsemble, self).__init__()
+        self.config = config
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.num_models = config.model.num_models
+        self.conv_layers = config.model.conv_layers
+        self.num_classes = config.model.num_classes
+
+        self.models = [FFNN_simple(config) for _ in range(self.num_models)]
+        self.optimizers = [torch.optim.Adam(model.parameters(), lr=config.hyper.lr, weight_decay=config.hyper.weight_decay) for model in self.models]
+        self.schedulers = [torch.optim.lr_scheduler.StepLR(optimizer, step_size=config.hyper.step_size, gamma=config.hyper.gamma) for optimizer in self.optimizers]
+        self.criterion = torch.nn.CrossEntropyLoss()
+
+        self.criterion = torch.nn.CrossEntropyLoss()
+        self.to(self.device)
+
+        # self.models = [FFNN_simple(input_sizes, hidden_sizes, output_size, dropout_prob) for _ in range(num_models)]
+        # self.optimizers = [torch.optim.Adam(model.parameters(), lr=0.001, weight_decay = 0.001) for model in self.models]
+        # self.scheduler = [torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1) for optimizer in self.optimizers]
+        # self.criterion = torch.nn.CrossEntropyLoss()
+        # self.num_models = num_models
+
+    # def train(self, train_loader, num_epochs, log_interval=30):
+    def train_custom(self, train_loader, test_loader):
+        # losses = [[] for _ in range(self.num_models)]
+        # for epoch in range(num_epochs):
+        #     for model, optimizer in zip(self.models, self.optimizers):
+        #         for batch, (x, y) in enumerate(train_loader):
+        #             optimizer.zero_grad()
+        #             loss = self.criterion(model(x), y)
+        #             loss.backward()
+        #             optimizer.step()
+        #             losses[self.models.index(model)].append(loss.item())
+        #         print(f'Model {self.models.index(model)}: Epoch {epoch+1}, Loss: {losses[self.models.index(model)][-1]}')
+
+        #     # Step the scheduler
+        #     for scheduler in self.scheduler:
+        #         scheduler.step()
+
+        # return losses
+
+        for epoch in range(self.config.hyper.epochs):
+            losses = [[] for _ in range(self.num_models)]
+            
+
             for model, optimizer in zip(self.models, self.optimizers):
+                train_loss = 0.0
                 for batch, (x, y) in enumerate(train_loader):
+                    x, y = x.to(self.device), y.to(self.device)
                     optimizer.zero_grad()
-                    loss = self.criterion(model(x), y)
+                    # loss = self.criterion(model(x), y)
+                    loss = torch.nn.functional.cross_entropy(model(x), y, reduction='sum')
                     loss.backward()
                     optimizer.step()
-                    losses[self.models.index(model)].append(loss.item())
-                print(f'Model {self.models.index(model)}: Epoch {epoch+1}, Loss: {losses[self.models.index(model)][-1]}')
 
-            # Step the scheduler
-            for scheduler in self.scheduler:
+                    # losses[self.models.index(model)].append(loss.item())
+                    train_loss += loss.item()
+
+                
+                train_loss = train_loss / len(train_loader.dataset)
+
+                losses[self.models.index(model)] = train_loss
+            
+
+            #validation loss
+            val_loss = 0.0
+            accuracies = [[] for _ in range(self.num_models)]
+            
+            with torch.no_grad():
+                for model in self.models:
+                    accuracy = 0.0
+                    for batch_idx, (val_data, val_target) in enumerate(test_loader):
+                        val_data, val_target = val_data.to(self.device), val_target.to(self.device)
+                        val_output = model(val_data)
+                        loss = torch.nn.functional.cross_entropy(val_output, val_target, reduction='mean')
+                        val_loss += loss.item()
+
+                        #accuracy
+                        _, predicted = torch.max(val_output, -1)
+                        correct = (predicted == val_target).sum().item()
+                        accuracy += correct / len(val_target)
+
+                    accuracy = accuracy / len(test_loader)
+
+                    accuracies[self.models.index(model)] = accuracy
+            
+            #take mean
+            accuracies = sum(accuracies) / len(accuracies)
+            losses = sum(losses) / len(losses)
+
+            val_loss = val_loss / len(test_loader)
+            val_loss = val_loss / self.num_models
+
+            print(f'Epoch: {epoch+1} / {self.config.hyper.epochs}\tTrain Loss: {train_loss}\tValidation Loss: {val_loss}\tValidation Accuracy: {accuracies}')
+
+            wandb.log({"training_loss": losses, "val_loss": val_loss, "val_accuracy": accuracies})
+
+            
+            #scheduler step
+            for scheduler in self.schedulers:
                 scheduler.step()
 
-        return losses
+        print('Finished Training')
     
 
     def save_models(self, directory='models'):
@@ -302,7 +438,8 @@ class BNN(torch.nn.Module):
         #I think it is - 
         return -log_likelihood
     
-    def neg_log_likelihood_classification(self, y_pred, y_true):
+    # def neg_log_likelihood_classification(self, y_pred, y_true):
+    def neg_log_likelihood_categorical(self, y_pred, y_true):
         # Compute Cross-Entropy loss (negative log-likelihood)
 
         #one hot encode the target
@@ -316,7 +453,7 @@ class BNN(torch.nn.Module):
    
         return loss
     
-    def train(self, train_loader, test_loader):
+    def train_custom(self, train_loader, test_loader):
 
 
         dataset_size = len(train_loader.dataset)
@@ -334,7 +471,7 @@ class BNN(torch.nn.Module):
                 output = self(data) 
 
                 # neg_log_likelihood = self.neg_log_likelihood_classification(output, target)*(dataset_size/len(data))
-                neg_log_likelihood = self.neg_log_likelihood_classification(output, target)
+                neg_log_likelihood = self.neg_log_likelihood_categorical(output, target)
 
                 logp = self.log_prob_p()*len(data)/dataset_size
                 logq = self.log_prob_q()*len(data)/dataset_size
@@ -358,7 +495,7 @@ class BNN(torch.nn.Module):
                     val_data, val_target = val_data.to(self.device), val_target.to(self.device)
                     val_output = self(val_data)
                     
-                    neg_log_likelihood = self.neg_log_likelihood_classification(val_output, val_target)
+                    neg_log_likelihood = self.neg_log_likelihood_categorical(val_output, val_target)
                     logp = self.log_prob_p()*len(val_data)/len(test_loader.dataset)
                     logq = self.log_prob_q()*len(val_data)/len(test_loader.dataset)
                     val_loss = neg_log_likelihood + logq - logp
@@ -525,7 +662,7 @@ class BatchEnsemble_FFNN(torch.nn.Module):
 
         return loss
     
-    def train(self, train_loader, test_loader):
+    def train_custom(self, train_loader, test_loader):
             
             # losses = []
             # for epoch in range(num_epochs):
@@ -829,7 +966,7 @@ class BNN_rank1(torch.nn.Module):
 
         return loss
     
-    def train(self, train_loader, num_epochs, log_interval=30):
+    def train_custom(self, train_loader, test_loader):
                 
                 # losses, neg_log_likelihoods, kl_divergences = [], [], []
     

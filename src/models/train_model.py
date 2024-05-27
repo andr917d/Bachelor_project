@@ -10,6 +10,9 @@ from torch.utils.data import DataLoader, TensorDataset, random_split
 from sklearn.datasets import fetch_covtype
 from torch import optim
 import matplotlib.pyplot as plt
+from imblearn.under_sampling import RandomUnderSampler
+from sklearn.preprocessing import StandardScaler
+
 from architectures import Simple_rank1_CNN, BatchEnsemble_CNN, BNN_rank1, BatchEnsemble_FFNN, BNN, FFNN_simple, FFNN_DeepEnsemble, CNN_DeepEnsemble, ConvolutionalBNN, CNN_simple
 # from helper_functions import get_probabilities, get_probabilities_dataset, calculate_entropy, calculate_predictive_entropy, calculate_mutual_information, plot_calibration_curve
 
@@ -97,14 +100,43 @@ def load_cifar10_OOD_pytorch():
 
 
 
+# def load_forest_cover_pytorch(test_split=0.2, batch_size=64):
+#     # Fetch the dataset
+#     dataset = fetch_covtype()
+#     data, targets = dataset.data, dataset.target - 1
+
+#     # Convert to PyTorch tensors
+#     data_tensor = torch.tensor(data, dtype=torch.float)
+#     targets_tensor = torch.tensor(targets, dtype=torch.long)
+
+#     # Split dataset into training and test sets
+#     total_size = len(data_tensor)
+#     test_size = int(total_size * test_split)
+#     train_size = total_size - test_size
+#     train_dataset, test_dataset = random_split(TensorDataset(data_tensor, targets_tensor), [train_size, test_size])
+
+#     # Create DataLoader for training and testing
+#     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+#     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+    # return train_loader, test_loader
+
 def load_forest_cover_pytorch(test_split=0.2, batch_size=64):
     # Fetch the dataset
     dataset = fetch_covtype()
     data, targets = dataset.data, dataset.target - 1
 
+    #Normalize the data
+    scaler = StandardScaler()
+    data = scaler.fit_transform(data)
+
+    # Oversample the data to balance the classes
+    ros = RandomUnderSampler(random_state=0)
+    data_resampled, targets_resampled = ros.fit_resample(data, targets)
+
     # Convert to PyTorch tensors
-    data_tensor = torch.tensor(data, dtype=torch.float)
-    targets_tensor = torch.tensor(targets, dtype=torch.long)
+    data_tensor = torch.tensor(data_resampled, dtype=torch.float)
+    targets_tensor = torch.tensor(targets_resampled, dtype=torch.long)
 
     # Split dataset into training and test sets
     total_size = len(data_tensor)
@@ -241,6 +273,9 @@ def main(config):
     #log to wandb
     wandb.log({"accuracy": accuracy, "NLL": NLL, "ECE": ECE})
     # wandb.log({"accuracy": accuracy, "NLL": NLL, "ECE": ECE, "accuracy_OOD": accuracy_OOD, "NLL_OOD": NLL_OOD, "ECE_OOD": ECE_OOD})
+
+    #confusion matrix
+    plot_confusion_matrix(labels, probabilities, normalize=True, save_name=f'confusion_matrix_{config.bsub.name}.png')
 
 
     #OOD detection
