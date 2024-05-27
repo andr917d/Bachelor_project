@@ -32,7 +32,7 @@ def get_probabilities(input_images, model):
         outputs = [ensemble_model(input_images.to(model.device)) for ensemble_model in model.models]
         outputs = torch.stack(outputs, dim=0)
 
-    elif model.config.model.name == "ConvolutionalBNN":
+    elif model.config.model.name == "ConvolutionalBNN" or model.config.model.name == "BNN":
         outputs = []
         for i in range(samples):
             model.sample()
