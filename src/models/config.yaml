@@ -12,6 +12,12 @@ hyper:
 model:
   # name: "ConvolutionalBNN"
   name: "BNN"
+  # name: "FFNN"
+  # name: "FFNN_MCD"
+  # name: "FFNN_DeepEnsemble"
+  # name: "BatchEnsemble_FFNN"
+  # name: "FFNN_Rank1"
+
   # name: "BatchEnsemble_CNN"
   # name: "Simple_rank1_CNN"
   # name: "CNN_simple"
@@ -24,7 +30,9 @@ model:
   num_models: 10
   input_size: 54
   output_size: 7
-  hidden_sizes: [64, 128, 256]
+  # hidden_sizes: [64, 128, 256]
+  hidden_sizes: [64, 128, 256, 128]
+
   conv_layers: [[1, 64, 3, 1, 1, 0.0, True], [64, 128, 3, 1, 1, 0.0, True], [128, 256, 3, 1, 1, 0.0, True]] 
                                                   #  (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False)]
 

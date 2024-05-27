@@ -13,10 +13,10 @@ def get_probabilities(input_images, model):
     samples = 50
 
     #check name of model¨
-    if model.config.model.name == "CNN_simple":
+    if model.config.model.name == "CNN_simple" or model.config.model.name == "FFNN":
         outputs = model(input_images.to(model.device)).unsqueeze(0)
 
-    elif model.config.model.name == "CNN_MCD":
+    elif model.config.model.name == "CNN_MCD" or model.config.model.name == "FFNN_MCD":
 
         #set model to train mode to turn on dropout
         model.train()
@@ -27,7 +27,7 @@ def get_probabilities(input_images, model):
 
         outputs = torch.stack(outputs, dim=0)
 
-    elif model.config.model.name == "CNN_DeepEnsemble":
+    elif model.config.model.name == "CNN_DeepEnsemble" or model.config.model.name == "FFNN_DeepEnsemble":
         [ensemble_model.eval() for ensemble_model in model.models]
         outputs = [ensemble_model(input_images.to(model.device)) for ensemble_model in model.models]
         outputs = torch.stack(outputs, dim=0)
@@ -41,10 +41,10 @@ def get_probabilities(input_images, model):
         
         outputs = torch.stack(outputs, dim=0)
 
-    elif model.config.model.name == "BatchEnsemble_CNN":
+    elif model.config.model.name == "BatchEnsemble_CNN" or model.config.model.name == "BatchEnsemble_FFNN":
         outputs = model(input_images.to(model.device))
 
-    elif model.config.model.name == "Simple_rank1_CNN":
+    elif model.config.model.name == "Simple_rank1_CNN" or model.config.model.name == "FFNN_Rank1":
         outputs = []
         for i in range(samples):
             model.sample()

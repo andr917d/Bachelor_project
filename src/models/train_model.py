@@ -279,7 +279,7 @@ def main(config):
 
 
     #OOD detection
-    plot_uncertainty_histograms(test_loader, test_loader_OOD, model)
+    # plot_uncertainty_histograms(test_loader, test_loader_OOD, model)
 
     #plot rotated images
     plot_rotated_image(test_loader, model, label_number=6)
