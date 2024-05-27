@@ -38,7 +38,7 @@ def load_cifar100_pytorch():
 def load_mnist_pytorch():
     train_dataset = MNIST(root='./data', train=True, download=True, transform=transforms.ToTensor())
     test_dataset = MNIST(root='./data', train=False, download=True, transform=transforms.ToTensor())
-    return DataLoader(train_dataset, batch_size=64, shuffle=True), DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
+    return DataLoader(train_dataset, batch_size=64, shuffle=True), DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 
 
