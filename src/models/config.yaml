@@ -31,7 +31,8 @@ model:
   input_size: 54
   output_size: 7
   # hidden_sizes: [64, 128, 256]
-  hidden_sizes: [64, 128, 256, 128]
+  # hidden_sizes: [64, 128, 256, 128, 64]
+  hidden_sizes: [64, 128, 256, 512, 1024]
 
   conv_layers: [[1, 64, 3, 1, 1, 0.0, True], [64, 128, 3, 1, 1, 0.0, True], [128, 256, 3, 1, 1, 0.0, True]] 
                                                   #  (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False)]
