@@ -11,8 +11,8 @@ hyper:
 model:
   # name: "ConvolutionalBNN"
   # name: "BNN"
-  # name: "BatchEnsemble_CNN"
-  name: "Simple_rank1_CNN"
+  name: "BatchEnsemble_CNN"
+  # name: "Simple_rank1_CNN"
   # name: "CNN_simple"
   # name: "CNN_MCD"
   # name: "CNN_DeepEnsemble"
@@ -32,10 +32,10 @@ model:
                 # [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False]]
 
   #BatchEnsemble
-  # conv_layers: [[1, 64, 3, 10, 1, 1], [64, 128, 3, 10, 1, 1], [128, 256, 3, 10, 1, 1]]
+  conv_layers: [[1, 64, 3, 10, 1, 1], [64, 128, 3, 10, 1, 1], [128, 256, 3, 10, 1, 1]]
 
   #Rank 1
-  conv_layers: [[1, 64, 3, 10, 1, 1, True], [64, 128, 3, 10, 1, 1, True], [128, 256, 3, 10, 1, 1, True]]
+  # conv_layers: [[1, 64, 3, 10, 1, 1, True], [64, 128, 3, 10, 1, 1, True], [128, 256, 3, 10, 1, 1, True]]
   #               [256, 256, 3, 10, 1, 1, False], [256, 256, 3, 10, 1, 1, False], [256, 256, 3, 10, 1, 1, False]]
   #conv_layers: [[1, 64, 3, 9, 1, 1], [64, 128, 3, 9, 1, 1], [128, 256, 3, 9, 1, 1]]
   # conv_layers: [[3, 64, 3, 1, 1], [64, 128, 3, 1, 1], [128, 256, 3, 1, 1]]
@@ -55,8 +55,8 @@ wandb:
 bsub:
   queue: "gpua100"
   # name: "ConvolutionalBNN"
-  # name: "BatchEnsemble_CNN"
-  name: "Rank1_CNN"
+  name: "BatchEnsemble_CNN"
+  # name: "Rank1_CNN"
   # name: "Simple_CNN"
   # name: "CNN_MCD"
   # name: "CNN_DeepEnsemble"
