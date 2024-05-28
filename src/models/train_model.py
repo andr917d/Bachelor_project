@@ -155,7 +155,7 @@ def init_model(model_name, config):
         return BatchEnsemble_CNN(config)
     elif model_name == "Simple_rank1_CNN":
         return Simple_rank1_CNN(config)
-    elif model_name == "BNN_rank1":
+    elif model_name == "FFNN_Rank1":
         return BNN_rank1(config)
     elif model_name == "BatchEnsemble_FFNN":
         return BatchEnsemble_FFNN(config)
