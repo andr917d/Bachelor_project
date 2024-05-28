@@ -11,11 +11,11 @@ hyper:
   dropout_prob: 0.0
 model:
   # name: "ConvolutionalBNN"
-  name: "BNN"
+  # name: "BNN"
   # name: "FFNN"
   # name: "FFNN_MCD"
   # name: "FFNN_DeepEnsemble"
-  # name: "BatchEnsemble_FFNN"
+  name: "BatchEnsemble_FFNN"
   # name: "FFNN_Rank1"
 
   # name: "BatchEnsemble_CNN"
@@ -71,7 +71,8 @@ bsub:
   # name: "Simple_CNN"
   # name: "CNN_MCD"
   # name: "CNN_DeepEnsemble"
-  name: "BNN"
+  # name: "BNN"
+  name: "BatchEnsemble_FFNN"
   gpu_num: 1
   cpu_num: 4
   cpu_mem: 4
