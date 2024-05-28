@@ -602,6 +602,7 @@ class BatchEnsemble_FFNN(torch.nn.Module):
     # def __init__(self, input_size, hidden_sizes, output_size, ensemble_size):
     def __init__(self, config):
         super().__init__()
+        self.config = config
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.hidden_sizes = config.model.hidden_sizes
         self.input_size = config.model.input_size
@@ -864,6 +865,7 @@ class BNN_rank1(torch.nn.Module):
     # def __init__(self, input_size, hidden_sizes, output_size, ensemble_size, mu_prior=0.0, sigma_prior=1.0):
     def __init__(self, config):
         super().__init__()
+        self.config = config
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.hidden_sizes = config.model.hidden_sizes
         self.input_size = config.model.input_size
