@@ -15,8 +15,8 @@ model:
   # name: "FFNN"
   # name: "FFNN_MCD"
   # name: "FFNN_DeepEnsemble"
-  # name: "BatchEnsemble_FFNN"
-  name: "FFNN_Rank1"
+  name: "BatchEnsemble_FFNN"
+  # name: "FFNN_Rank1"
 
   # name: "BatchEnsemble_CNN"
   # name: "Simple_rank1_CNN"
@@ -72,8 +72,8 @@ bsub:
   # name: "CNN_MCD"
   # name: "CNN_DeepEnsemble"
   # name: "BNN"
-  # name: "BatchEnsemble_FFNN"
-  name: "Rank1_FFNN"
+  name: "BatchEnsemble_FFNN"
+  # name: "Rank1_FFNN"
   gpu_num: 1
   cpu_num: 4
   cpu_mem: 4
