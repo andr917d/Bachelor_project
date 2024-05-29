@@ -10,14 +10,15 @@ hyper:
   weight_decay: 0.001
   dropout_prob: 0.0
 model:
-  # name: "ConvolutionalBNN"
+  #
   # name: "BNN"
-  # name: "FFNN"
+  name: "FFNN_simple"
   # name: "FFNN_MCD"
   # name: "FFNN_DeepEnsemble"
   # name: "BatchEnsemble_FFNN"
-  name: "FFNN_Rank1"
+  # name: "FFNN_Rank1"
 
+  # name: "ConvolutionalBNN"
   # name: "BatchEnsemble_CNN"
   # name: "Simple_rank1_CNN"
   # name: "CNN_simple"
@@ -35,7 +36,7 @@ model:
   # hidden_sizes: [64, 128, 256, 512, 1024]
   hidden_sizes: [512, 256, 128, 64]
 
-  conv_layers: [[1, 64, 3, 1, 1, 0.0, True], [64, 128, 3, 1, 1, 0.0, True], [128, 256, 3, 1, 1, 0.0, True]] 
+  # conv_layers: [[1, 64, 3, 1, 1, 0.0, True], [64, 128, 3, 1, 1, 0.0, True], [128, 256, 3, 1, 1, 0.0, True]] 
                                                   #  (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False), (256, 256, 3, 1, 1, 0.2, False)]
 
 # For ConvolutionalBNN layer: [in_channels, out_channels, kernel_size, stride, padding, pooling]
@@ -43,7 +44,7 @@ model:
                 # [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False], [256, 256, 3, 1, 1, False]]
 
   #BatchEnsemble
-  # conv_layers: [[1, 64, 3, 10, 1, 1], [64, 128, 3, 10, 1, 1], [128, 256, 3, 10, 1, 1]]
+  conv_layers: [[1, 64, 3, 10, 1, 1], [64, 128, 3, 10, 1, 1], [128, 256, 3, 10, 1, 1]]
 
   #Rank 1
   # conv_layers: [[1, 64, 3, 10, 1, 1, True], [64, 128, 3, 10, 1, 1, True], [128, 256, 3, 10, 1, 1, True]]
@@ -73,7 +74,8 @@ bsub:
   # name: "CNN_DeepEnsemble"
   # name: "BNN"
   # name: "BatchEnsemble_FFNN"
-  name: "Rank1_FFNN"
+  # name: "Rank1_FFNN"
+  name: "simple_FFNN"
   gpu_num: 1
   cpu_num: 4
   cpu_mem: 4

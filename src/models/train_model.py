@@ -163,6 +163,8 @@ def init_model(model_name, config):
         return BNN(config)
     elif model_name == "FFNN_simple":
         return FFNN_simple(config)
+    elif model_name == "FFNN_MCD":
+        return FFNN_simple(config)
     elif model_name == "FFNN_DeepEnsemble":
         return FFNN_DeepEnsemble(config)
     elif model_name == "CNN_DeepEnsemble":

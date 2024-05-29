@@ -10,6 +10,7 @@ class FFNN_simple(torch.nn.Module):
     # def __init__(self, input_size, hidden_sizes, output_size, dropout_prob=0.0):
     def __init__(self, config):
         super(FFNN_simple, self).__init__()
+        self.config = config
         self.layers = torch.nn.ModuleList()
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.input_size = config.model.input_size
@@ -116,7 +117,7 @@ class FFNN_simple(torch.nn.Module):
     
 
     
-class FFNN_DeepEnsemble:
+class FFNN_DeepEnsemble(torch.nn.Module):
     # def __init__(self, num_models, input_sizes, hidden_sizes, output_size, dropout_prob=0.5):
     def __init__(self, config):
 
