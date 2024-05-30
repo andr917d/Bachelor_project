@@ -13,7 +13,7 @@ def get_probabilities(input_images, model):
     samples = 50
 
     #check name of model¨
-    if model.config.model.name == "CNN_simple" or model.config.model.name == "FFNN":
+    if model.config.model.name == "CNN_simple" or model.config.model.name == "FFNN_simple":
         outputs = model(input_images.to(model.device)).unsqueeze(0)
 
     elif model.config.model.name == "CNN_MCD" or model.config.model.name == "FFNN_MCD":
