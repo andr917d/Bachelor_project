@@ -12,8 +12,8 @@ hyper:
 model:
   #
   # name: "BNN"
-  name: "FFNN_simple"
-  # name: "FFNN_MCD"
+  # name: "FFNN_simple"
+  name: "FFNN_MCD"
   # name: "FFNN_DeepEnsemble"
   # name: "BatchEnsemble_FFNN"
   # name: "FFNN_Rank1"
@@ -75,7 +75,8 @@ bsub:
   # name: "BNN"
   # name: "BatchEnsemble_FFNN"
   # name: "Rank1_FFNN"
-  name: "simple_FFNN"
+  # name: "simple_FFNN"
+  name: "FFNN_MCD"
   gpu_num: 1
   cpu_num: 4
   cpu_mem: 4
