@@ -11,8 +11,8 @@ hyper:
   dropout_prob: 0.0
 model:
   #
-  name: "BNN"
-  # name: "FFNN_simple"
+  # name: "BNN"
+  name: "FFNN_simple"
   # name: "FFNN_MCD"
   # name: "FFNN_DeepEnsemble"
   # name: "BatchEnsemble_FFNN"
@@ -72,10 +72,10 @@ bsub:
   # name: "Simple_CNN"
   # name: "CNN_MCD"
   # name: "CNN_DeepEnsemble"
-  name: "BNN"
+  # name: "BNN"
   # name: "BatchEnsemble_FFNN"
   # name: "Rank1_FFNN"
-  # name: "simple_FFNN"
+  name: "simple_FFNN"
   # name: "FFNN_MCD"
   # name: "FFNN_DeepEnsemble"
   gpu_num: 1
